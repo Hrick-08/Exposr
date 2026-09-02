@@ -14,6 +14,7 @@ MAX_PORT_ATTEMPTS = 100
 @dataclass(frozen=True)
 class AgentConfig:
     server_host: str
+    agent_token: str
     control_port: int
     data_port: int
     local_host: str
@@ -24,7 +25,7 @@ class AgentConfig:
 
 async def register_port(reader, writer, port, config):
     trying(f"Trying to register public port {port}")
-    writer.write(command(REGISTER, port))
+    writer.write(command(REGISTER, f"{port} {config.agent_token}"))
     await writer.drain()
     response = await reader.readline()
     if not response:

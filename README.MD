@@ -190,6 +190,26 @@ For example:
 exposr config set-server 12.345.67.890
 ```
 
+This generates a random agent token and saves it in:
+
+```text
+~/.exposr/agent_token.txt
+```
+
+Copy the contents of that file into the server's
+`~/.exposr/config.json`:
+
+```json
+{
+  "server_host": "",
+  "agent_token": "PASTE_TOKEN_HERE"
+}
+```
+
+The token is sent with every control registration request. The server closes
+connections whose token does not match its configured token before accepting
+the agent or opening a public tunnel.
+
 The value is saved in:
 
 ```text
@@ -541,6 +561,94 @@ The `20000-30000` range is required because Exposr dynamically listens on ports 
 
 ---
 
+---
+
+# Benchmarks
+
+Exposr v0.4 was benchmarked against a direct (non-tunneled) baseline to measure protocol overhead.
+
+## Test Environment
+
+**Relay server:**
+- Azure Standard_B1s (1 vCPU, 1 GiB RAM, burstable)
+- Region: Central India
+- OS: Ubuntu 24.04
+
+**Client:** Windows, local network connection to Azure
+
+**Method:** 100 sequential HTTP GET requests per run, measured with an async
+benchmark harness (`aiohttp`). Direct requests hit the local service on
+`127.0.0.1`; tunneled requests hit the same service through the public
+Exposr port.
+
+## Results
+
+| Metric | Direct | Tunneled | Overhead |
+|---|---|---|---|
+| Mean latency | 80.80 ms | 547.77 ms | +466.97 ms |
+| Median latency | 78.59 ms | 541.00 ms | +462.41 ms |
+| p95 latency | 110.20 ms | 587.42 ms | +477.22 ms |
+| p99 latency | 124.50 ms | 623.29 ms | +498.79 ms |
+| Throughput | 12.4 req/s | 1.8 req/s | -85.5% |
+
+Raw TCP connect time to the relay server (`curl -w "%{time_connect}"`)
+measured **113 ms**, isolating pure network RTT from protocol-level cost.
+
+## Overhead Breakdown
+
+```text
+Total tunneled latency:        547.77 ms
+Network RTT (TCP connect):    -113.00 ms
+--------------------------------------
+Exposr protocol overhead:     ~435 ms
+```
+
+The majority of tunneled latency is not raw network distance but overhead
+introduced by Exposr's connection lifecycle:
+
+- A fresh TCP handshake for the **data channel** (port `9001`) on every
+  request, since each public connection gets a dedicated data tunnel
+  rather than a reused/pooled connection
+- A control-channel round trip (`CONNECT <uuid>` → agent dial-back with
+  `DATA <uuid>`) that must complete before any payload is forwarded
+- No connection keep-alive or pooling on the tunnel path, so this cost
+  repeats on every single request instead of being amortized
+
+## Known Confounds
+
+- The relay server runs on the cheapest available Azure tier
+  (Standard_B1s), which is CPU-credit throttled under sustained load.
+  Some of the measured overhead is plausibly hardware-imposed rather than
+  protocol-imposed.
+- Direct-baseline latency (80 ms on `127.0.0.1`) is higher than a typical
+  loopback benchmark, likely due to the local test server used
+  (`python -m http.server` is single-threaded/blocking). A faster local
+  server would tighten the baseline and slightly increase the reported
+  overhead percentage.
+
+## Reproducing
+
+```bash
+pip install aiohttp
+python exposr_benchmark.py \
+  --direct-url http://127.0.0.1:3000/ \
+  --tunnel-url http://YOUR_SERVER_IP:25565/ \
+  --requests 100
+```
+
+Concurrency sweep:
+
+```bash
+python exposr_benchmark.py \
+  --direct-url http://127.0.0.1:3000/ \
+  --tunnel-url http://YOUR_SERVER_IP:25565/ \
+  --concurrency 1 10 50 100 \
+  --requests 200
+```
+
+This overhead is the primary target for the connection-reuse and
+persistent-tunnel work listed under **Planned Features**.
+
 # Current Limitations
 
 Exposr is currently an experimental proof of concept.
@@ -549,9 +657,8 @@ Known limitations:
 
 - TCP only
 - No UDP forwarding
-- No authentication
 - No encryption or TLS
-- No agent tokens
+- Data connections are not separately authenticated
 - No domain or subdomain routing
 - No persistent tunnel configuration
 - No user accounts or dashboard
@@ -563,7 +670,10 @@ Known limitations:
 
 # Security Warning
 
-The current version is not production-ready. Ports `9000` and `9001` do not use authentication or encryption. Do not expose the control and data ports publicly in a production deployment without appropriate security controls.
+The current version is not production-ready. The control port uses the
+configured agent token, but the data port does not use separate
+authentication or encryption. Do not expose the control and data ports
+publicly in a production deployment without appropriate security controls.
 
 ---
 

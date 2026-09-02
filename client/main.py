@@ -1,7 +1,7 @@
 import asyncio
 
 from client.cli import parse_arguments
-from client.config import get_server_host, set_server
+from client.config import get_agent_token, get_server_host, set_server
 from client.connection import AgentConfig, connect_to_server
 from common.logger import error, info
 
@@ -12,18 +12,27 @@ def main():
         if args.config_command == "set-server":
             set_server(args.server_host)
             info(f"Server address saved: {args.server_host}")
+            info("Agent token generated and saved to ~/.exposr/agent_token.txt")
         return
 
     server_host = args.server_host or get_server_host()
+    agent_token = get_agent_token()
     if not server_host:
         error(
             "Server IP is not configured. "
             "Run: exposr config set-server <server-ip>"
         )
         return
+    if not agent_token:
+        error(
+            "Agent token is not configured. "
+            "Run: exposr config set-server <server-ip>"
+        )
+        return
 
     config = AgentConfig(
         server_host=server_host,
+        agent_token=agent_token,
         control_port=args.control_port,
         data_port=args.data_port,
         local_host=args.local_host,
