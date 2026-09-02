@@ -3,7 +3,10 @@ import argparse
 import random
 
 
-# ANSI colors
+# =========================
+# ANSI COLORS
+# =========================
+
 GREEN = "\033[92m"
 YELLOW = "\033[93m"
 RED = "\033[91m"
@@ -27,9 +30,55 @@ def info(message):
     print(f"{BLUE}[INFO]{RESET} {message}")
 
 
+# =========================
+# CLI ARGUMENTS
+# =========================
+
 parser = argparse.ArgumentParser(
+    prog="openport",
     description="OpenPort TCP tunneling agent"
 )
+
+subparsers = parser.add_subparsers(
+    dest="command",
+    required=True
+)
+
+
+# -------------------------
+# EXPOSE COMMAND
+# -------------------------
+
+expose_parser = subparsers.add_parser(
+    "expose",
+    help="Expose a local port to the internet"
+)
+
+expose_parser.add_argument(
+    "local_port",
+    type=int,
+    help="Local port to expose"
+)
+
+expose_parser.add_argument(
+    "to",
+    nargs="?",
+    default=None,
+    help="Use 'to <public-port>' to specify a public port"
+)
+
+expose_parser.add_argument(
+    "public_port",
+    nargs="?",
+    type=int,
+    default=None,
+    help="Public port"
+)
+
+
+# -------------------------
+# OPTIONAL CONFIGURATION
+# -------------------------
 
 parser.add_argument(
     "--server-host",
@@ -57,22 +106,30 @@ parser.add_argument(
     help="Local host to forward to"
 )
 
-parser.add_argument(
-    "--local-port",
-    type=int,
-    required=True,
-    help="Local port to forward to"
-)
-
-parser.add_argument(
-    "--public-port",
-    type=int,
-    default=25565,
-    help="Preferred public port (default: 25565)"
-)
 
 args = parser.parse_args()
 
+
+# =========================
+# VALIDATE CLI SYNTAX
+# =========================
+
+if args.command == "expose":
+
+    if args.to is not None and args.to != "to":
+        parser.error(
+            "Expected syntax: openport expose <local-port> to <public-port>"
+        )
+
+    if args.to == "to" and args.public_port is None:
+        parser.error(
+            "Please specify a public port after 'to'"
+        )
+
+
+# =========================
+# CONFIGURATION
+# =========================
 
 SERVER_HOST = args.server_host
 CONTROL_PORT = args.control_port
@@ -81,10 +138,30 @@ DATA_PORT = args.data_port
 LOCAL_HOST = args.local_host
 LOCAL_PORT = args.local_port
 
-DEFAULT_PUBLIC_PORT = args.public_port
+
+# Default public port
+DEFAULT_PUBLIC_PORT = (
+    args.public_port
+    if args.public_port is not None
+    else 25565
+)
+
+
+# True when user explicitly did:
+# openport expose 3000 to 23343
+
+EXPLICIT_PUBLIC_PORT = args.public_port is not None
+
+
+# Random fallback range
+
 RANDOM_PORT_START = 20000
 RANDOM_PORT_END = 30000
 
+
+# =========================
+# DATA PIPE
+# =========================
 
 async def pipe(reader, writer):
 
@@ -115,6 +192,10 @@ async def pipe(reader, writer):
         except Exception:
             pass
 
+
+# =========================
+# HANDLE PUBLIC CONNECTION
+# =========================
 
 async def handle_connection(connection_id):
 
@@ -160,8 +241,17 @@ async def handle_connection(connection_id):
         )
 
         await asyncio.gather(
-            pipe(data_reader, local_writer),
-            pipe(local_reader, data_writer),
+
+            pipe(
+                data_reader,
+                local_writer
+            ),
+
+            pipe(
+                local_reader,
+                data_writer
+            )
+
         )
 
     except Exception as e:
@@ -171,7 +261,15 @@ async def handle_connection(connection_id):
         )
 
 
-async def register_port(reader, writer, port):
+# =========================
+# REGISTER PORT
+# =========================
+
+async def register_port(
+    reader,
+    writer,
+    port
+):
 
     trying(
         f"Trying to register public port {port}"
@@ -193,7 +291,6 @@ async def register_port(reader, writer, port):
 
         return False
 
-    response_text = response.decode().strip()
 
     if response.startswith(b"REGISTERED"):
 
@@ -209,12 +306,17 @@ async def register_port(reader, writer, port):
 
         return True
 
+
     error(
         f"Port {port} unavailable"
     )
 
     return False
 
+
+# =========================
+# CONNECT TO SERVER
+# =========================
 
 async def connect_to_server():
 
@@ -238,18 +340,52 @@ async def connect_to_server():
                 "Connected to OpenPort control server"
             )
 
-            # First attempt: 25565
-            registered = await register_port(
-                reader,
-                writer,
-                DEFAULT_PUBLIC_PORT
-            )
+
+            # =========================
+            # TRY REQUESTED / DEFAULT PORT
+            # =========================
 
             public_port = DEFAULT_PUBLIC_PORT
 
-            # If 25565 is unavailable,
-            # keep trying random ports until one works
+            registered = await register_port(
+                reader,
+                writer,
+                public_port
+            )
+
+
+            # =========================
+            # USER EXPLICITLY REQUESTED
+            # A PORT
+            # =========================
+
+            if (
+                not registered
+                and EXPLICIT_PUBLIC_PORT
+            ):
+
+                error(
+                    f"Requested public port "
+                    f"{public_port} is unavailable"
+                )
+
+                writer.close()
+
+                await writer.wait_closed()
+
+                raise Exception(
+                    f"Port {public_port} "
+                    f"is unavailable"
+                )
+
+
+            # =========================
+            # DEFAULT PORT FAILED
+            # TRY RANDOM PORTS
+            # =========================
+
             attempts = 0
+
 
             while not registered:
 
@@ -270,15 +406,18 @@ async def connect_to_server():
                         "No public ports available"
                     )
 
+
                 public_port = random.randint(
                     RANDOM_PORT_START,
                     RANDOM_PORT_END
                 )
 
+
                 trying(
-                    f"Port {DEFAULT_PUBLIC_PORT} unavailable. "
-                    f"Trying random port {public_port}"
+                    f"Trying random public port "
+                    f"{public_port}"
                 )
+
 
                 registered = await register_port(
                     reader,
@@ -286,7 +425,11 @@ async def connect_to_server():
                     public_port
                 )
 
-            # Wait for incoming connections
+
+            # =========================
+            # WAIT FOR CONNECTIONS
+            # =========================
+
             while True:
 
                 command = await reader.readline()
@@ -299,12 +442,14 @@ async def connect_to_server():
 
                     break
 
+
                 parts = (
                     command
                     .decode()
                     .strip()
                     .split()
                 )
+
 
                 if (
                     len(parts) == 2
@@ -313,10 +458,12 @@ async def connect_to_server():
 
                     connection_id = parts[1]
 
+
                     trying(
                         f"Setting up connection "
                         f"{connection_id[:8]}"
                     )
+
 
                     asyncio.create_task(
                         handle_connection(
@@ -324,11 +471,13 @@ async def connect_to_server():
                         )
                     )
 
+
         except Exception as e:
 
             error(
                 f"Control connection error: {e}"
             )
+
 
         trying(
             "Retrying connection in 5 seconds"
@@ -337,4 +486,20 @@ async def connect_to_server():
         await asyncio.sleep(5)
 
 
-asyncio.run(connect_to_server())
+# =========================
+# ENTRY POINT
+# =========================
+
+def main():
+    try:
+        asyncio.run(
+            connect_to_server()
+        )
+    except KeyboardInterrupt:
+        print()
+        info("OpenPort stopped")
+
+
+if __name__ == "__main__":
+
+    main()

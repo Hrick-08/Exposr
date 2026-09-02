@@ -13,7 +13,7 @@
 
 OpenPort is a reverse TCP tunneling project that exposes services running on a user's local machine to the public internet through a remote relay server.
 
-The current version is built with Python and uses an Azure VM as the public relay.
+The current version is built with Python and uses a public server as the relay.
 
 ## Current Version
 
@@ -34,7 +34,19 @@ The current version is built with Python and uses an Azure VM as the public rela
 - Dedicated data tunnel per connection
 - UUID-based connection identification
 - Async networking using Python `asyncio`
-- Clear colored logs for connected, trying, and error events
+- Colored logs for connected, trying, and error events
+- Command-line interface
+- Simple tunnel syntax:
+
+```bash
+openport expose 3000
+```
+
+- Optional public port:
+
+```bash
+openport expose 3000 to 21342
+```
 
 ---
 
@@ -46,17 +58,27 @@ Suppose an application is running locally:
 127.0.0.1:3000
 ```
 
-Start the OpenPort agent:
+Start OpenPort:
 
 ```bash
-python agent.py --local-port 3000
+openport expose 3000
 ```
 
 The agent creates an outbound connection to the OpenPort relay server.
 
-It first attempts to register public port `25565`.
+By default, it attempts to register public port:
 
-If `25565` is already owned by another tunnel, the agent selects a random port between `20000` and `30000`, checks whether it is available, and keeps trying until it finds a free port.
+```text
+25565
+```
+
+If `25565` is already owned by another tunnel, OpenPort selects a random port between:
+
+```text
+20000–30000
+```
+
+It checks whether the selected port is available and continues trying until it successfully registers a free port.
 
 ```text
 Your PC
@@ -88,7 +110,7 @@ Example forwarding path:
 Internet User
       │
       ▼
-20.198.81.254:25565
+SERVER_IP:25565
       │
       ▼
 OpenPort Server
@@ -103,7 +125,7 @@ OpenPort Agent
 Your Application
 ```
 
-The application continues running on the user's computer. The Azure VM only acts as a public relay.
+The application continues running on the user's computer. The relay server only forwards traffic.
 
 ---
 
@@ -118,8 +140,303 @@ OpenPort/
 ├── server/
 │   └── server.py
 │
+├── setup.py
+│
 └── README.md
 ```
+
+---
+
+# CLI Installation
+
+OpenPort can be installed as a command-line tool.
+
+After installation, the agent can be started from anywhere using:
+
+```bash
+openport expose <local-port>
+```
+
+## Install from Source
+
+Clone the repository:
+
+```bash
+git clone YOUR_REPOSITORY_URL
+```
+
+Navigate into the project:
+
+```bash
+cd OpenPort
+```
+
+Install OpenPort:
+
+```bash
+python -m pip install .
+```
+
+For development, use an editable installation:
+
+```bash
+python -m pip install -e .
+```
+
+The editable installation means changes made to the source code are immediately used without reinstalling the package.
+
+---
+
+# Windows PATH Setup
+
+Depending on the Python installation, the OpenPort executable may be installed in a Python `Scripts` directory that is not automatically added to `PATH`.
+
+If this happens:
+
+```text
+'openport' is not recognized as an internal or external command
+```
+
+Find the Python user base directory:
+
+```cmd
+python -m site --user-base
+```
+
+Then add the `Scripts` directory inside that location to your Windows `PATH`.
+
+For Microsoft Store Python installations, the location may look similar to:
+
+```text
+C:\Users\YOUR_USERNAME\AppData\Local\Packages\
+PythonSoftwareFoundation.Python.3.12_...\LocalCache\
+local-packages\Python312\Scripts
+```
+
+For other Python installations, it may instead look like:
+
+```text
+C:\Users\YOUR_USERNAME\AppData\Roaming\Python\Python312\Scripts
+```
+
+The exact location depends on how Python was installed.
+
+To check where `openport.exe` exists, run:
+
+```cmd
+where openport
+```
+
+If it is not found, search the Python Scripts directory manually.
+
+After adding the correct directory to `PATH`, close all existing terminals and open a new terminal.
+
+Verify:
+
+```cmd
+where openport
+```
+
+Expected output:
+
+```text
+C:\...\Scripts\openport.exe
+```
+
+Then:
+
+```cmd
+openport expose 3000
+```
+
+---
+
+# Installing for Development
+
+While developing OpenPort, use:
+
+```cmd
+python -m pip install -e .
+```
+
+This creates an editable installation.
+
+Your workflow becomes:
+
+```text
+Edit agent.py
+      ↓
+Run OpenPort
+      ↓
+Changes are immediately used
+```
+
+For example:
+
+```cmd
+openport expose 3000
+```
+
+You do not need to reinstall OpenPort after every code change.
+
+If the console command itself changes or stops working, reinstall:
+
+```cmd
+python -m pip install -e .
+```
+
+---
+
+# Using the CLI
+
+## Basic Usage
+
+Expose a local service running on port `3000`:
+
+```bash
+openport expose 3000
+```
+
+OpenPort will attempt to expose it on:
+
+```text
+SERVER_IP:25565
+```
+
+If `25565` is unavailable, a random free port between `20000` and `30000` will be assigned.
+
+Example:
+
+```text
+[TRYING] Connecting to OpenPort SERVER_IP:9000
+[CONNECTED] Connected to OpenPort control server
+[TRYING] Trying to register public port 25565
+[CONNECTED] Public tunnel active: SERVER_IP:25565
+[CONNECTED] Forwarding to: 127.0.0.1:3000
+```
+
+---
+
+## Specify a Public Port
+
+You can explicitly request a public port:
+
+```bash
+openport expose 3000 to 21342
+```
+
+This forwards:
+
+```text
+Local:
+
+127.0.0.1:3000
+```
+
+to:
+
+```text
+Public:
+
+SERVER_IP:21342
+```
+
+Example:
+
+```text
+[TRYING] Connecting to OpenPort SERVER_IP:9000
+[CONNECTED] Connected to OpenPort control server
+[TRYING] Trying to register public port 21342
+[CONNECTED] Public tunnel active: SERVER_IP:21342
+[CONNECTED] Forwarding to: 127.0.0.1:3000
+```
+
+The syntax is:
+
+```text
+openport expose <local-port>
+```
+
+or:
+
+```text
+openport expose <local-port> to <public-port>
+```
+
+Examples:
+
+```bash
+openport expose 3000
+
+openport expose 8080
+
+openport expose 5000 to 25000
+
+openport expose 25565 to 25565
+```
+
+---
+
+# Port Assignment
+
+When no public port is specified:
+
+```bash
+openport expose 3000
+```
+
+OpenPort attempts:
+
+```text
+25565
+```
+
+If unavailable:
+
+```text
+25565
+  │
+  ▼
+available?
+  │
+  ├── yes → register tunnel
+  │
+  └── no
+        │
+        ▼
+random port from 20000–30000
+        │
+        ▼
+available?
+  │
+  ├── yes → register tunnel
+  │
+  └── no → try another random port
+```
+
+Example:
+
+```text
+Agent A
+Local: 3000
+Public: 25565
+
+Agent B
+Local: 8080
+Public: 28061
+
+Agent C
+Local: 5000
+Public: 29040
+```
+
+When a public port is explicitly specified:
+
+```bash
+openport expose 3000 to 21342
+```
+
+OpenPort requests that exact port.
 
 ---
 
@@ -179,39 +496,18 @@ Each public client receives a separate data connection.
 
 ## Public Ports
 
-The agent tries `25565` first:
+Public tunnels are created dynamically.
+
+Examples:
 
 ```text
-25565
-  ↓
-available?
-  ├── yes → use 25565
-  │
-  └── no
-        ↓
-random port from 20000–30000
-        ↓
-available?
-  ├── no → try another random port
-  │
-  └── yes → register tunnel
+SERVER_IP:25565
+SERVER_IP:21342
+SERVER_IP:28061
+SERVER_IP:29040
 ```
 
-Example:
-
-```text
-Agent A
-Local: 3000
-Public: 25565
-
-Agent B
-Local: 8080
-Public: 28061
-
-Agent C
-Local: 5000
-Public: 29040
-```
+Each port belongs to a specific connected agent.
 
 ---
 
@@ -220,8 +516,7 @@ Public: 29040
 ## Server
 
 - Python 3.10+
-- Linux server or VPS
-- Public IPv4 address
+- Linux server, VPS, or any machine with a reachable public IP address
 - Open inbound TCP ports
 
 Tested with:
@@ -245,19 +540,7 @@ Microsoft Azure Virtual Machine
 ## 1. Connect to the server
 
 ```bash
-ssh azureuser@YOUR_SERVER_IP
-```
-
-Example:
-
-```bash
-ssh azureuser@20.198.81.254
-```
-
-If an SSH alias is configured:
-
-```bash
-ssh openport
+ssh USERNAME@YOUR_SERVER_IP
 ```
 
 ## 2. Install Python
@@ -280,7 +563,13 @@ mkdir -p ~/openport
 cd ~/openport
 ```
 
-Create `server.py` and paste the current OpenPort server implementation.
+Create:
+
+```text
+server.py
+```
+
+Paste the OpenPort server implementation.
 
 ## 4. Run the server
 
@@ -293,82 +582,6 @@ Expected startup output:
 ```text
 Control server listening on 9000
 Data server listening on 9001
-```
-
----
-
-# Client Setup
-
-The agent runs on the computer hosting the application.
-
-Example:
-
-```text
-OpenPort/
-└── client/
-    └── agent.py
-```
-
-Configure the OpenPort server address in `agent.py`:
-
-```python
-SERVER_HOST = "20.198.81.254"
-CONTROL_PORT = 9000
-DATA_PORT = 9001
-LOCAL_HOST = "127.0.0.1"
-```
-
----
-
-# Running the Agent
-
-The local port is required.
-
-If an application is running on:
-
-```text
-127.0.0.1:3000
-```
-
-run:
-
-```bash
-python agent.py --local-port 3000
-```
-
-The agent first attempts:
-
-```text
-25565
-```
-
-If unavailable, it automatically searches for a free random port between:
-
-```text
-20000–30000
-```
-
-For example:
-
-```text
-[connected] Connected to OpenPort server
-[trying] Attempting to register port 25565
-[connected] Public tunnel active on port 25565
-```
-
-If `25565` is already occupied:
-
-```text
-[trying] Attempting to register port 25565
-[trying] Port 25565 unavailable
-[trying] Trying random port 28061
-[connected] Public tunnel active on port 28061
-```
-
-The local application would then be accessible at:
-
-```text
-20.198.81.254:28061
 ```
 
 ---
@@ -390,13 +603,13 @@ uvicorn main:app --host 127.0.0.1 --port 3000
 Start OpenPort:
 
 ```bash
-python agent.py --local-port 3000
+openport expose 3000
 ```
 
 If OpenPort assigns `25565`, visiting:
 
 ```text
-http://20.198.81.254:25565
+http://SERVER_IP:25565
 ```
 
 forwards traffic to:
@@ -405,19 +618,31 @@ forwards traffic to:
 http://127.0.0.1:3000
 ```
 
-Swagger docs would be available through:
+Swagger documentation would be available through:
 
 ```text
-http://20.198.81.254:25565/docs
+http://SERVER_IP:25565/docs
 ```
 
 if the tunnel is assigned port `25565`.
+
+You can also explicitly choose a port:
+
+```bash
+openport expose 3000 to 21342
+```
+
+Then access:
+
+```text
+http://SERVER_IP:21342
+```
 
 ---
 
 # Multiple Agents
 
-The current server supports multiple agents.
+The server supports multiple agents.
 
 ```text
 Agent A
@@ -459,7 +684,7 @@ Client C ──┘
                     └── Tunnel C ──► Local Service
 ```
 
-Each public connection gets:
+Each public connection receives:
 
 ```text
 Unique UUID
@@ -473,44 +698,45 @@ This keeps application traffic separate from control messages.
 
 # Logging
 
-The current version uses clearer colored status logs.
+OpenPort uses colored status logs.
 
-## Green — `[connected]`
+## Green — `[CONNECTED]`
 
 Used for successful events:
 
 ```text
-[connected] Agent connected
-[connected] Tunnel registered
-[connected] Tunnel established
+[CONNECTED] Connected to OpenPort control server
+[CONNECTED] Public tunnel active
+[CONNECTED] Tunnel established
 ```
 
-## Yellow — `[trying]`
+## Yellow — `[TRYING]`
 
-Used while setting up or waiting for a connection:
+Used while setting up connections:
 
 ```text
-[trying] Registering tunnel
-[trying] Waiting for agent
-[trying] Attempting data connection
+[TRYING] Connecting to OpenPort
+[TRYING] Trying to register public port
+[TRYING] Setting up connection
+[TRYING] Opening data connection
 ```
 
-## Red — `[error]`
+## Red — `[ERROR]`
 
 Used for failures, timeouts, disconnections, and cleanup:
 
 ```text
-[error] Agent disconnected
-[error] Tunnel on port 28061 removed
-[error] Agent timed out
-[error] Connection failed
+[ERROR] Agent disconnected
+[ERROR] Tunnel on port 28061 removed
+[ERROR] Agent timed out
+[ERROR] Connection failed
 ```
 
 ---
 
-# Azure Configuration
+# Azure / Firewall Configuration
 
-The Azure VM Network Security Group must allow inbound TCP traffic for:
+The relay server firewall or cloud security rules must allow inbound TCP traffic for:
 
 | Port / Range | Protocol | Purpose |
 |---|---|---|
@@ -520,9 +746,9 @@ The Azure VM Network Security Group must allow inbound TCP traffic for:
 | `25565` | TCP | Default public tunnel |
 | `20000–30000` | TCP | Dynamic public tunnel range |
 
-The `20000–30000` range is required because the server dynamically listens on ports within that range.
+The `20000–30000` range is required because OpenPort dynamically listens on ports within this range.
 
-Without allowing this range through the Azure Network Security Group, OpenPort may register a tunnel successfully but external users will not be able to connect to it.
+Without allowing these ports through the cloud firewall or Network Security Group, OpenPort may successfully register a tunnel internally while external users cannot reach it.
 
 ---
 
@@ -549,7 +775,7 @@ Without allowing this range through the Azure Network Security Group, OpenPort m
                     └──────────┬──────────┘
                                │
                                │ Persistent outbound
-                               │ connection
+                               │ control connection
                                ▼
                     ┌─────────────────────┐
                     │   OpenPort Agent    │
@@ -583,9 +809,9 @@ Known limitations:
 - No dashboard
 - No rate limiting
 - No abuse protection
-- No packaged executable
-- The Azure public port range must still be explicitly allowed
-- Random port allocation only checks OpenPort tunnel availability and does not bypass firewall rules
+- No packaged standalone executable
+- Public port ranges must be explicitly allowed by the server firewall
+- Random port allocation does not bypass firewall or cloud security rules
 
 ---
 
@@ -615,17 +841,18 @@ A production version should add:
 - Firewall restrictions
 - Abuse prevention
 
+Do not expose the control and data ports publicly in a production deployment without authentication and encryption.
+
 ---
 
 # Planned Features
 
 ## Phase 1 — Core Improvements
 
-- Optional `--public-port` override
-- Better tunnel registration protocol
 - Server-assigned ports
 - Agent heartbeat
 - Automatic stale-agent detection
+- Better tunnel registration protocol
 - Cleaner shutdown handling
 - Persistent server process using `systemd`
 
@@ -650,53 +877,35 @@ UDP will require a different forwarding architecture from the current TCP stream
 
 ## Phase 4 — Domain Support
 
-Eventually, OpenPort could support:
+Eventually:
 
 ```text
-hrick.in
-```
-
-or:
-
-```text
-myproject.hrick.in
-```
-
-For HTTP services:
-
-```text
-myapp.hrick.in
+myapp.example.com
         ↓
 OpenPort
         ↓
 127.0.0.1:3000
 ```
 
-## Phase 5 — CLI
+## Phase 5 — CLI Improvements
 
-Eventually:
+Future CLI functionality could include:
 
 ```bash
 openport expose 3000
-```
 
-Example output:
+openport expose 3000 to 25000
 
-```text
-[connected] OpenPort tunnel active
+openport status
 
-Public address:
+openport tunnels
 
-20.198.81.254:25565
-
-Forwarding to:
-
-127.0.0.1:3000
+openport stop
 ```
 
 ## Phase 6 — Packaged Agent
 
-The agent could eventually be packaged as:
+Eventually, OpenPort could be distributed as a standalone executable:
 
 ```text
 openport.exe
@@ -727,11 +936,43 @@ FastAPI
         ↓
 OpenPort Agent
         ↓
-Azure VM
+Public Relay Server
         ↓
 Public IP + Dynamic Port
         ↓
 Internet
 ```
 
-The current version demonstrates the core functionality of OpenPort: exposing a local TCP service through a publicly accessible relay server with automatic fallback public port allocation.
+The current version demonstrates the core functionality of OpenPort: exposing a local TCP service through a publicly accessible relay server with dynamic port registration, automatic fallback allocation, and a command-line interface.
+
+---
+
+# CLI Quick Reference
+
+```bash
+# Install OpenPort
+python -m pip install .
+
+# Development installation
+python -m pip install -e .
+
+# Expose a local service using the default public port
+openport expose 3000
+
+# Expose a local service using a specific public port
+openport expose 3000 to 21342
+
+# Expose another local service
+openport expose 8080
+
+# Expose a Minecraft Java server on its default port
+openport expose 25565
+```
+
+The general syntax is:
+
+```text
+openport expose <local-port> to <public-port>
+```
+
+If `<public-port>` is omitted, OpenPort tries `25565` first and then automatically falls back to a random available port between `20000` and `30000`.
