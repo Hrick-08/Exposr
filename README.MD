@@ -126,6 +126,7 @@ OpenPort/
 +-- client/
 |   +-- __init__.py
 |   +-- cli.py
+|   +-- config.py
 |   +-- connection.py
 |   +-- tunnel.py
 |   +-- main.py
@@ -144,7 +145,7 @@ OpenPort/
 |   +-- main.py
 |
 +-- setup.py
-+-- README.md
++-- README.MD
 ```
 
 The old monolithic `client/agent.py` and `server/server.py` files are no longer active implementations. Shared logging and protocol messages live in `common/`; client and server responsibilities are separated into their respective packages.
