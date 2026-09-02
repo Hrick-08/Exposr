@@ -1,1 +1,1 @@
-"""OpenPort relay server package."""
+"""Exposr relay server package."""

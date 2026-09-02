@@ -3,8 +3,8 @@ import argparse
 
 def parse_arguments(argv=None):
     parser = argparse.ArgumentParser(
-        prog="openport",
-        description="OpenPort TCP tunneling agent",
+        prog="exposr",
+        description="Exposr TCP tunneling agent",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
     expose_parser = subparsers.add_parser(
@@ -20,10 +20,10 @@ def parse_arguments(argv=None):
     expose_parser.add_argument("--data-port", dest="data_port", type=int, default=argparse.SUPPRESS)
     expose_parser.add_argument("--local-host", dest="local_host", default=argparse.SUPPRESS)
 
-    config_parser = subparsers.add_parser("config", help="Manage OpenPort configuration")
+    config_parser = subparsers.add_parser("config", help="Manage Exposr configuration")
     config_subparsers = config_parser.add_subparsers(dest="config_command", required=True)
     set_server_parser = config_subparsers.add_parser(
-        "set-server", help="Set the OpenPort relay server address"
+        "set-server", help="Set the Exposr relay server address"
     )
     set_server_parser.add_argument("server_host")
 
@@ -35,7 +35,7 @@ def parse_arguments(argv=None):
     args = parser.parse_args(argv)
     if args.command == "expose":
         if args.to is not None and args.to != "to":
-            parser.error("Expected syntax: openport expose <local-port> to <public-port>")
+            parser.error("Expected syntax: exposr expose <local-port> to <public-port>")
         if args.to == "to" and args.public_port is None:
             parser.error("Please specify a public port after 'to'")
     return args

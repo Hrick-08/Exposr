@@ -42,11 +42,11 @@ async def connect_to_server(config):
     while True:
         writer = None
         try:
-            trying(f"Connecting to OpenPort {config.server_host}:{config.control_port}")
+            trying(f"Connecting to Exposr {config.server_host}:{config.control_port}")
             reader, writer = await asyncio.open_connection(
                 config.server_host, config.control_port
             )
-            connected("Connected to OpenPort control server")
+            connected("Connected to Exposr control server")
             public_port = config.preferred_public_port
             registered = await register_port(reader, writer, public_port, config)
             if not registered and config.explicit_public_port:

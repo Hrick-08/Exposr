@@ -1,1 +1,1 @@
-"""Shared OpenPort helpers."""
+"""Shared Exposr helpers."""

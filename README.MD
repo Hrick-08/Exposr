@@ -9,15 +9,15 @@
         |_|
 ```
 
-# OpenPort
+# Exposr
 
-OpenPort is a reverse TCP tunneling project that exposes services running on a user's local machine to the public internet through a remote relay server.
+Exposr is a reverse TCP tunneling project that exposes services running on a user's local machine to the public internet through a remote relay server.
 
 The project is built with Python and uses a public server as the relay. The agent maintains a persistent control connection and creates a dedicated data connection for every incoming public connection.
 
 ## Current Version
 
-**OpenPort v0.4 - Experimental / Proof of Concept**
+**Exposr v0.4 - Experimental / Proof of Concept**
 
 ### Current capabilities
 
@@ -40,13 +40,13 @@ The project is built with Python and uses a public server as the relay. The agen
 Simple tunnel syntax:
 
 ```bash
-openport expose 3000
+exposr expose 3000
 ```
 
 Optional public port:
 
 ```bash
-openport expose 3000 to 21342
+exposr expose 3000 to 21342
 ```
 
 ---
@@ -59,27 +59,27 @@ Suppose an application is running locally:
 127.0.0.1:3000
 ```
 
-Start OpenPort:
+Start Exposr:
 
 ```bash
-openport expose 3000
+exposr expose 3000
 ```
 
-The agent creates an outbound connection to the OpenPort relay server.
+The agent creates an outbound connection to the Exposr relay server.
 
-By default, it attempts to register public port `25565`. If that port is already owned by another tunnel, OpenPort selects a random port between `20000-30000`. Each random port is sent to the server for registration; a port is not assumed to be available merely because it was randomly selected.
+By default, it attempts to register public port `25565`. If that port is already owned by another tunnel, Exposr selects a random port between `20000-30000`. Each random port is sent to the server for registration; a port is not assumed to be available merely because it was randomly selected.
 
 ```text
 Your PC
 127.0.0.1:3000
         |
         v
- OpenPort Agent
+ Exposr Agent
         |
         | Persistent control connection
         v
 +--------------------------+
-|     OpenPort Server      |
+|     Exposr Server        |
 |                          |
 | Control Port: 9000       |
 | Data Port:    9001       |
@@ -102,10 +102,10 @@ Internet User
 SERVER_IP:25565
       |
       v
-OpenPort Server
+Exposr Server
       |
       v
-OpenPort Agent
+Exposr Agent
       |
       v
 127.0.0.1:3000
@@ -121,7 +121,7 @@ The application continues running on the user's computer. The relay server only 
 # Project Structure
 
 ```text
-OpenPort/
+Exposr/
 |
 +-- client/
 |   +-- __init__.py
@@ -154,16 +154,16 @@ The old monolithic `client/agent.py` and `server/server.py` files are no longer 
 
 # CLI Installation
 
-OpenPort can be installed as a command-line tool.
+Exposr can be installed as a command-line tool.
 
 Clone the repository and navigate into the project:
 
 ```bash
 git clone YOUR_REPOSITORY_URL
-cd OpenPort
+cd Exposr
 ```
 
-Install OpenPort:
+Install Exposr:
 
 ```bash
 python -m pip install .
@@ -175,53 +175,53 @@ For development, use an editable installation:
 python -m pip install -e .
 ```
 
-The console command is provided by the `client.main:main` entry point. The editable installation means source changes are immediately used without reinstalling the package.
+The console command is provided by the `client.main:main` entry point as `exposr`. The editable installation means source changes are immediately used without reinstalling the package.
 
 ## Configure the Relay Server
 
-The server address is blank when OpenPort is first installed. Before using
+The server address is blank when Exposr is first installed. Before using
 `expose`, save the public IP address or hostname of the relay VM:
 
 ```bash
-openport config set-server YOUR_SERVER_IP
+exposr config set-server YOUR_SERVER_IP
 ```
 
 For example:
 
 ```bash
-openport config set-server 12.345.67.890
+exposr config set-server 12.345.67.890
 ```
 
 The value is saved in:
 
 ```text
-~/.openport/config.json
+~/.exposr/config.json
 ```
 
-If you run `openport expose 3000` before configuring the server, OpenPort
+If you run `exposr expose 3000` before configuring the server, Exposr
 stops and displays:
 
 ```text
-[ERROR] Server IP is not configured. Run: openport config set-server <server-ip>
+[ERROR] Server IP is not configured. Run: exposr config set-server <server-ip>
 ```
 
 The `--server-host` option can be used to override the saved address for one
 run:
 
 ```bash
-openport expose 3000 --server-host YOUR_SERVER_IP
+exposr expose 3000 --server-host YOUR_SERVER_IP
 ```
 
 ---
 
 # Windows PATH Setup
 
-Depending on the Python installation, the OpenPort executable may be installed in a Python `Scripts` directory that is not automatically added to `PATH`.
+Depending on the Python installation, the Exposr executable may be installed in a Python `Scripts` directory that is not automatically added to `PATH`.
 
 If this happens:
 
 ```text
-'openport' is not recognized as an internal or external command
+'exposr' is not recognized as an internal or external command
 ```
 
 Find the Python user base directory:
@@ -230,16 +230,16 @@ Find the Python user base directory:
 python -m site --user-base
 ```
 
-Then add the `Scripts` directory inside that location to the Windows `PATH`. To check where `openport.exe` exists, run:
+Then add the `Scripts` directory inside that location to the Windows `PATH`. To check where `exposr.exe` exists, run:
 
 ```cmd
-where openport
+where exposr
 ```
 
-After adding the correct directory to `PATH`, close existing terminals and open a new terminal. Verify with `where openport`, then run:
+After adding the correct directory to `PATH`, close existing terminals and open a new terminal. Verify with `where exposr`, then run:
 
 ```cmd
-openport expose 3000
+exposr expose 3000
 ```
 
 ---
@@ -251,10 +251,10 @@ openport expose 3000
 Expose a local service running on port `3000`:
 
 ```bash
-openport expose 3000
+exposr expose 3000
 ```
 
-OpenPort attempts to expose it on `SERVER_IP:25565`. If `25565` is unavailable, a random port between `20000` and `30000` is selected and checked with the server.
+Exposr attempts to expose it on `SERVER_IP:25565`. If `25565` is unavailable, a random port between `20000` and `30000` is selected and checked with the server.
 
 Optional connection settings can be supplied with:
 
@@ -274,7 +274,7 @@ defaults to `127.0.0.1`.
 You can explicitly request a public port:
 
 ```bash
-openport expose 3000 to 21342
+exposr expose 3000 to 21342
 ```
 
 This forwards:
@@ -286,26 +286,26 @@ This forwards:
 The general syntax is:
 
 ```text
-openport expose <local-port>
-openport expose <local-port> to <public-port>
+exposr expose <local-port>
+exposr expose <local-port> to <public-port>
 ```
 
 Examples:
 
 ```bash
-openport expose 3000
-openport expose 8080
-openport expose 5000 to 25000
-openport expose 25565 to 25565
+exposr expose 3000
+exposr expose 8080
+exposr expose 5000 to 25000
+exposr expose 25565 to 25565
 ```
 
-When a public port is explicitly specified, OpenPort requests that exact port and does not silently replace it with a random port.
+When a public port is explicitly specified, Exposr requests that exact port and does not silently replace it with a random port.
 
 ---
 
 # Port Assignment
 
-When no public port is specified, OpenPort attempts `25565` first:
+When no public port is specified, Exposr attempts `25565` first:
 
 ```text
 25565
@@ -432,13 +432,13 @@ Suppose FastAPI runs locally on `127.0.0.1:3000`:
 uvicorn main:app --host 127.0.0.1 --port 3000
 ```
 
-Start OpenPort:
+Start Exposr:
 
 ```bash
-openport expose 3000
+exposr expose 3000
 ```
 
-If OpenPort assigns `25565`, visiting `http://SERVER_IP:25565` forwards traffic to `http://127.0.0.1:3000`. Swagger documentation is available through `http://SERVER_IP:25565/docs` when that public port is assigned.
+If Exposr assigns `25565`, visiting `http://SERVER_IP:25565` forwards traffic to `http://127.0.0.1:3000`. Swagger documentation is available through `http://SERVER_IP:25565/docs` when that public port is assigned.
 
 ---
 
@@ -459,7 +459,7 @@ Multiple users can connect to the same public port simultaneously. Every connect
 ```text
 Client A --+
            |
-Client B --+----> OpenPort Server
+Client B --+----> Exposr Server
            |             |
 Client C --+             +-- Tunnel A --> Local Service
                          +-- Tunnel B --> Local Service
@@ -470,7 +470,7 @@ Client C --+             +-- Tunnel A --> Local Service
 
 # Logging
 
-OpenPort uses colored status logs.
+Exposr uses colored status logs.
 
 ## Green - `[CONNECTED]`
 
@@ -497,11 +497,11 @@ The relay server firewall or cloud security rules must allow inbound TCP traffic
 | Port / Range | Protocol | Purpose |
 |---|---|---|
 | `22` | TCP | SSH, if required for administration |
-| `9000` | TCP | OpenPort control channel |
-| `9001` | TCP | OpenPort data channel |
+| `9000` | TCP | Exposr control channel |
+| `9001` | TCP | Exposr data channel |
 | `20000-30000` | TCP | Dynamic public tunnel range |
 
-The `20000-30000` range is required because OpenPort dynamically listens on ports within that range. Without allowing these ports through the cloud firewall or Network Security Group, OpenPort may register a tunnel internally while external users cannot reach it.
+The `20000-30000` range is required because Exposr dynamically listens on ports within that range. Without allowing these ports through the cloud firewall or Network Security Group, Exposr may register a tunnel internally while external users cannot reach it.
 
 ---
 
@@ -517,7 +517,7 @@ The `20000-30000` range is required because OpenPort dynamically listens on port
                                |
                                v
                     +---------------------+
-                    |   OpenPort Server   |
+                    |   Exposr Server     |
                     |                     |
                     | Control -> 9000     |
                     | Data    -> 9001     |
@@ -531,7 +531,7 @@ The `20000-30000` range is required because OpenPort dynamically listens on port
                                | control connection
                                v
                     +---------------------+
-                    |   OpenPort Agent    |
+                    |   Exposr Agent      |
                     +----------+----------+
                                |
                                v
@@ -545,7 +545,7 @@ The `20000-30000` range is required because OpenPort dynamically listens on port
 
 # Current Limitations
 
-OpenPort is currently an experimental proof of concept.
+Exposr is currently an experimental proof of concept.
 
 Known limitations:
 
@@ -590,43 +590,43 @@ These are not part of the current protocol or implementation.
 # Development Status
 
 ```text
-OpenPort v0.4
+Exposr v0.4
 Experimental / Proof of Concept
 ```
 
-The current version demonstrates the core functionality of OpenPort: exposing a local TCP service through a publicly accessible relay server with dynamic port registration, automatic fallback allocation, dedicated per-connection data tunnels, and a command-line interface.
+The current version demonstrates the core functionality of Exposr: exposing a local TCP service through a publicly accessible relay server with dynamic port registration, automatic fallback allocation, dedicated per-connection data tunnels, and a command-line interface.
 
 ---
 
 # CLI Quick Reference
 
 ```bash
-# Install OpenPort
+# Install Exposr
 python -m pip install .
 
 # Development installation
 python -m pip install -e .
 
 # Configure the relay server once
-openport config set-server YOUR_SERVER_IP
+exposr config set-server YOUR_SERVER_IP
 
 # Expose a local service using the default public port
-openport expose 3000
+exposr expose 3000
 
 # Expose a local service using a specific public port
-openport expose 3000 to 21342
+exposr expose 3000 to 21342
 
 # Expose another local service
-openport expose 8080
+exposr expose 8080
 
 # Expose a Minecraft Java server on its default local port
-openport expose 25565
+exposr expose 25565
 ```
 
 The general syntax is:
 
 ```text
-openport expose <local-port> to <public-port>
+exposr expose <local-port> to <public-port>
 ```
 
-If `<public-port>` is omitted, OpenPort tries `25565` first and then falls back to a random available port between `20000` and `30000`.
+If `<public-port>` is omitted, Exposr tries `25565` first and then falls back to a random available port between `20000` and `30000`.

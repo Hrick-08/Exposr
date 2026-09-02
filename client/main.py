@@ -18,7 +18,7 @@ def main():
     if not server_host:
         error(
             "Server IP is not configured. "
-            "Run: openport config set-server <server-ip>"
+            "Run: exposr config set-server <server-ip>"
         )
         return
 
@@ -35,7 +35,7 @@ def main():
         asyncio.run(connect_to_server(config))
     except KeyboardInterrupt:
         print()
-        info("OpenPort stopped")
+        info("Exposr stopped")
 
 
 if __name__ == "__main__":

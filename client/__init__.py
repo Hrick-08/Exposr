@@ -1,1 +1,1 @@
-"""OpenPort client package."""
+"""Exposr client package."""

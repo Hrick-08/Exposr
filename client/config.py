@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 
-CONFIG_PATH = Path.home() / ".openport" / "config.json"
+CONFIG_PATH = Path.home() / ".exposr" / "config.json"
 
 
 def load_config():
