@@ -3,75 +3,39 @@ import uuid
 
 CONTROL_PORT = 9000
 DATA_PORT = 9001
-PUBLIC_PORT = 25565
 
-agent_writer = None
+agents = {}
+tunnels = {}
 pending_connections = {}
 
-
-async def handle_agent(reader, writer):
-    global agent_writer
-
-    print("Agent connected")
-
-    # Only this connection is used for control messages.
-    agent_writer = writer
-
-    try:
-        await reader.read()
-
-    except Exception as e:
-        print(f"Agent error: {e}")
-
-    finally:
-        if agent_writer is writer:
-            agent_writer = None
-
-        print("Agent disconnected")
-
-        try:
-            writer.close()
-            await writer.wait_closed()
-        except Exception:
-            pass
+# ANSI colors
+GREEN = "\033[92m"
+YELLOW = "\033[93m"
+RED = "\033[91m"
+BLUE = "\033[94m"
+RESET = "\033[0m"
 
 
-async def handle_data(reader, writer):
-    try:
-        # Agent sends:
-        # DATA <connection-id>\n
-        header = await reader.readline()
+def connected(message):
+    print(f"{GREEN}[CONNECTED]{RESET} {message}")
 
-        if not header:
-            writer.close()
-            return
 
-        parts = header.decode().strip().split()
+def trying(message):
+    print(f"{YELLOW}[TRYING]{RESET} {message}")
 
-        if len(parts) != 2 or parts[0] != "DATA":
-            print("Invalid data connection")
-            writer.close()
-            return
 
-        connection_id = parts[1]
+def error(message):
+    print(f"{RED}[ERROR]{RESET} {message}")
 
-        future = pending_connections.get(connection_id)
 
-        if future is None:
-            print(f"Unknown connection: {connection_id}")
-            writer.close()
-            return
+def info(message):
+    print(f"{BLUE}[INFO]{RESET} {message}")
 
-        if not future.done():
-            future.set_result((reader, writer))
 
-    except Exception as e:
-        print(f"Data connection error: {e}")
-
-        try:
-            writer.close()
-        except Exception:
-            pass
+class Agent:
+    def __init__(self, writer):
+        self.writer = writer
+        self.tunnels = set()
 
 
 async def pipe(reader, writer):
@@ -96,13 +60,23 @@ async def pipe(reader, writer):
             pass
 
 
-async def handle_public_client(client_reader, client_writer):
+async def handle_public_client(
+    client_reader,
+    client_writer,
+    public_port,
+    agent
+):
     client_addr = client_writer.get_extra_info("peername")
 
-    print(f"Public client connected: {client_addr}")
+    connected(
+        f"New public connection from {client_addr} "
+        f"on port {public_port}"
+    )
 
-    if agent_writer is None or agent_writer.is_closing():
-        print("No agent connected")
+    if agent.writer.is_closing():
+        error(
+            f"Agent unavailable for port {public_port}"
+        )
 
         client_writer.close()
         await client_writer.wait_closed()
@@ -114,22 +88,27 @@ async def handle_public_client(client_reader, client_writer):
 
     pending_connections[connection_id] = future
 
+    trying(
+        f"Setting up tunnel {connection_id[:8]} "
+        f"for public port {public_port}"
+    )
+
     try:
-        # Ask the agent to create a dedicated tunnel
-        message = f"CONNECT {connection_id}\n"
+        agent.writer.write(
+            f"CONNECT {connection_id}\n".encode()
+        )
 
-        agent_writer.write(message.encode())
-        await agent_writer.drain()
+        await agent.writer.drain()
 
-        print(f"Waiting for agent: {connection_id}")
-
-        # Wait up to 10 seconds for the agent
         data_reader, data_writer = await asyncio.wait_for(
             future,
             timeout=10
         )
 
-        print(f"Tunnel established: {connection_id}")
+        connected(
+            f"Tunnel established {connection_id[:8]} "
+            f"on port {public_port}"
+        )
 
         await asyncio.gather(
             pipe(client_reader, data_writer),
@@ -137,10 +116,15 @@ async def handle_public_client(client_reader, client_writer):
         )
 
     except asyncio.TimeoutError:
-        print(f"Agent timed out: {connection_id}")
+        error(
+            f"Agent timed out while establishing "
+            f"tunnel {connection_id[:8]}"
+        )
 
     except Exception as e:
-        print(f"Public connection error: {e}")
+        error(
+            f"Public connection error: {e}"
+        )
 
     finally:
         pending_connections.pop(connection_id, None)
@@ -152,7 +136,222 @@ async def handle_public_client(client_reader, client_writer):
             pass
 
 
+async def register_tunnel(agent, public_port):
+
+    if public_port in tunnels:
+        error(
+            f"Port {public_port} is already in use"
+        )
+        return False
+
+    trying(
+        f"Registering tunnel on public port {public_port}"
+    )
+
+    try:
+        server = await asyncio.start_server(
+            lambda reader, writer: handle_public_client(
+                reader,
+                writer,
+                public_port,
+                agent
+            ),
+            "0.0.0.0",
+            public_port
+        )
+
+        tunnels[public_port] = {
+            "server": server,
+            "agent": agent
+        }
+
+        agent.tunnels.add(public_port)
+
+        connected(
+            f"Tunnel active on public port {public_port}"
+        )
+
+        return True
+
+    except Exception as e:
+
+        error(
+            f"Could not register port "
+            f"{public_port}: {e}"
+        )
+
+        return False
+
+
+async def unregister_agent(agent):
+
+    for port in list(agent.tunnels):
+
+        tunnel = tunnels.pop(port, None)
+
+        if tunnel:
+
+            error(
+                f"Tunnel on port {port} removed"
+            )
+
+            tunnel["server"].close()
+
+            try:
+                await tunnel["server"].wait_closed()
+            except Exception:
+                pass
+
+
+async def handle_agent(reader, writer):
+
+    agent_id = str(uuid.uuid4())
+
+    agent = Agent(writer)
+
+    agents[agent_id] = agent
+
+    connected(
+        f"Agent connected ({agent_id[:8]})"
+    )
+
+    try:
+
+        while True:
+
+            command = await reader.readline()
+
+            if not command:
+                break
+
+            parts = command.decode().strip().split()
+
+            if not parts:
+                continue
+
+            # REGISTER <PORT>
+            if (
+                parts[0] == "REGISTER"
+                and len(parts) == 2
+            ):
+
+                try:
+
+                    public_port = int(parts[1])
+
+                    success = await register_tunnel(
+                        agent,
+                        public_port
+                    )
+
+                    if success:
+
+                        writer.write(
+                            f"REGISTERED {public_port}\n".encode()
+                        )
+
+                    else:
+
+                        writer.write(
+                            f"ERROR Port {public_port} "
+                            f"is unavailable\n".encode()
+                        )
+
+                    await writer.drain()
+
+                except ValueError:
+
+                    error(
+                        "Agent attempted to register an invalid port"
+                    )
+
+                    writer.write(
+                        b"ERROR Invalid port\n"
+                    )
+
+                    await writer.drain()
+
+    except Exception as e:
+
+        error(
+            f"Agent error: {e}"
+        )
+
+    finally:
+
+        error(
+            f"Agent disconnected ({agent_id[:8]})"
+        )
+
+        await unregister_agent(agent)
+
+        agents.pop(agent_id, None)
+
+        try:
+            writer.close()
+            await writer.wait_closed()
+        except Exception:
+            pass
+
+
+async def handle_data(reader, writer):
+
+    try:
+
+        header = await reader.readline()
+
+        if not header:
+
+            writer.close()
+            await writer.wait_closed()
+            return
+
+        parts = header.decode().strip().split()
+
+        if (
+            len(parts) != 2
+            or parts[0] != "DATA"
+        ):
+
+            error(
+                "Invalid data connection"
+            )
+
+            writer.close()
+            await writer.wait_closed()
+            return
+
+        connection_id = parts[1]
+
+        future = pending_connections.get(
+            connection_id
+        )
+
+        if future is None:
+
+            error(
+                f"Unknown connection {connection_id[:8]}"
+            )
+
+            writer.close()
+            await writer.wait_closed()
+            return
+
+        if not future.done():
+
+            future.set_result(
+                (reader, writer)
+            )
+
+    except Exception as e:
+
+        error(
+            f"Data connection error: {e}"
+        )
+
+
 async def main():
+
     control_server = await asyncio.start_server(
         handle_agent,
         "0.0.0.0",
@@ -165,21 +364,19 @@ async def main():
         DATA_PORT
     )
 
-    public_server = await asyncio.start_server(
-        handle_public_client,
-        "0.0.0.0",
-        PUBLIC_PORT
+    connected(
+        f"Control server listening on port {CONTROL_PORT}"
     )
 
-    print(f"Control server: {CONTROL_PORT}")
-    print(f"Data server: {DATA_PORT}")
-    print(f"Public server: {PUBLIC_PORT}")
+    connected(
+        f"Data server listening on port {DATA_PORT}"
+    )
 
-    async with control_server, data_server, public_server:
+    async with control_server, data_server:
+
         await asyncio.gather(
             control_server.serve_forever(),
             data_server.serve_forever(),
-            public_server.serve_forever(),
         )
 
 

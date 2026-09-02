@@ -11,48 +11,78 @@
 
 # OpenPort
 
-OpenPort is a simple reverse tunneling project that exposes a service running on your local machine to the public internet through a remote server.
+OpenPort is a reverse TCP tunneling project that exposes services running on a user's local machine to the public internet through a remote relay server.
 
-The current version uses Python and an Azure VM as the public relay server.
+The current version is built with Python and uses an Azure VM as the public relay.
 
-## How It Works
+## Current Version
 
-Normally, a service running on your computer is only accessible locally:
+**OpenPort v0.3 — Experimental / Proof of Concept**
+
+### Current capabilities
+
+- Reverse TCP tunneling
+- Localhost service exposure
+- Dynamic public port registration
+- Default public port: `25565`
+- Automatic fallback to a random available port
+- Random fallback range: `20000–30000`
+- Port availability checking before assignment
+- Persistent agent connection
+- Automatic agent reconnection
+- Multiple simultaneous public connections
+- Dedicated data tunnel per connection
+- UUID-based connection identification
+- Async networking using Python `asyncio`
+- Clear colored logs for connected, trying, and error events
+
+---
+
+# How It Works
+
+Suppose an application is running locally:
 
 ```text
-localhost:25565
+127.0.0.1:3000
 ```
 
-OpenPort creates a persistent outbound connection from your computer to a public server.
+Start the OpenPort agent:
 
-When someone connects to the public server, OpenPort creates a dedicated tunnel back to your local service.
+```bash
+python agent.py --local-port 3000
+```
+
+The agent creates an outbound connection to the OpenPort relay server.
+
+It first attempts to register public port `25565`.
+
+If `25565` is already owned by another tunnel, the agent selects a random port between `20000` and `30000`, checks whether it is available, and keeps trying until it finds a free port.
 
 ```text
-                    ┌──────────────────────┐
-                    │      Your PC         │
-                    │                      │
-                    │  localhost:25565     │
-                    │         ▲            │
-                    │         │            │
-                    │    OpenPort Agent    │
-                    └─────────┬────────────┘
-                              │
-                    Dedicated data tunnels
-                              │
-                              ▼
-                    ┌──────────────────────┐
-                    │     Azure VM         │
-                    │                      │
-                    │ Control Port: 9000   │
-                    │ Data Port:    9001   │
-                    │ Public Port:  25565  │
-                    └─────────┬────────────┘
-                              │
-                              ▼
-                         Internet Users
+Your PC
+127.0.0.1:3000
+        │
+        ▼
+ OpenPort Agent
+        │
+        │ Persistent control connection
+        ▼
+┌──────────────────────────┐
+│     OpenPort Server      │
+│                          │
+│ Control Port: 9000       │
+│ Data Port:    9001       │
+│                          │
+│ Public Ports:            │
+│ 25565                    │
+│ 20000–30000              │
+└─────────────┬────────────┘
+              │
+              ▼
+       Internet Users
 ```
 
-For example:
+Example forwarding path:
 
 ```text
 Internet User
@@ -67,28 +97,13 @@ OpenPort Server
 OpenPort Agent
       │
       ▼
-127.0.0.1:25565
+127.0.0.1:3000
       │
       ▼
 Your Application
 ```
 
-This allows an application running only on your computer to be accessed through the public IP address of the server.
-
----
-
-# Features
-
-Current features:
-
-- Reverse TCP tunneling
-- Localhost service exposure
-- Persistent agent connection
-- Automatic agent reconnection
-- Multiple simultaneous public connections
-- Dedicated data tunnel per connection
-- UUID-based connection identification
-- Async networking using Python `asyncio`
+The application continues running on the user's computer. The Azure VM only acts as a public relay.
 
 ---
 
@@ -106,29 +121,97 @@ OpenPort/
 └── README.md
 ```
 
-## Server
+---
 
-The server runs on a public machine or VPS.
-
-It handles three ports:
+# Ports
 
 | Port | Purpose |
 |---|---|
-| `9000` | Agent control connection |
-| `9001` | Agent data connections |
-| `25565` | Public exposed service |
+| `9000` | Persistent agent control channel |
+| `9001` | Dedicated data tunnel connections |
+| `25565` | Default public port |
+| `20000–30000` | Dynamic fallback public port range |
 
-## Agent
+## Port 9000 — Control Channel
 
-The agent runs on the user's computer.
+The agent maintains a persistent connection to:
 
-It:
+```text
+SERVER_IP:9000
+```
 
-1. Connects to the OpenPort server.
-2. Waits for incoming connection requests.
-3. Connects to the local service.
-4. Creates a dedicated data tunnel.
-5. Forwards traffic between the public client and the local service.
+The agent registers a public port:
+
+```text
+REGISTER 25565
+```
+
+When an internet user connects to the public port, the server sends the agent:
+
+```text
+CONNECT <connection-id>
+```
+
+Example:
+
+```text
+CONNECT 8bab2f9a-b0e2-4db2-8fed-9a8dda8e3aed
+```
+
+## Port 9001 — Data Channel
+
+For each incoming public connection:
+
+1. The server generates a UUID.
+2. The server tells the correct agent to handle it.
+3. The agent connects to the local application.
+4. The agent opens a new connection to port `9001`.
+5. The agent identifies that connection with:
+
+```text
+DATA <connection-id>
+```
+
+6. The server matches the data connection with the waiting public client.
+7. Traffic is forwarded in both directions.
+
+Each public client receives a separate data connection.
+
+## Public Ports
+
+The agent tries `25565` first:
+
+```text
+25565
+  ↓
+available?
+  ├── yes → use 25565
+  │
+  └── no
+        ↓
+random port from 20000–30000
+        ↓
+available?
+  ├── no → try another random port
+  │
+  └── yes → register tunnel
+```
+
+Example:
+
+```text
+Agent A
+Local: 3000
+Public: 25565
+
+Agent B
+Local: 8080
+Public: 28061
+
+Agent C
+Local: 5000
+Public: 29040
+```
 
 ---
 
@@ -137,34 +220,44 @@ It:
 ## Server
 
 - Python 3.10+
-- A public server or VPS
+- Linux server or VPS
 - Public IPv4 address
 - Open inbound TCP ports
+
+Tested with:
+
+```text
+Ubuntu 24.04
+Python 3.12
+Microsoft Azure Virtual Machine
+```
 
 ## Client
 
 - Python 3.10+
 - Internet connection
-- A local service running on the configured port
+- A local TCP service running on the desired port
 
 ---
 
 # Server Setup
 
-The server can run on any Linux VPS.
-
-This project was tested on:
-
-```text
-Ubuntu 24.04
-Python 3.12
-Azure Virtual Machine
-```
-
 ## 1. Connect to the server
 
 ```bash
 ssh azureuser@YOUR_SERVER_IP
+```
+
+Example:
+
+```bash
+ssh azureuser@20.198.81.254
+```
+
+If an SSH alias is configured:
+
+```bash
+ssh openport
 ```
 
 ## 2. Install Python
@@ -187,28 +280,19 @@ mkdir -p ~/openport
 cd ~/openport
 ```
 
-## 4. Add the server
+Create `server.py` and paste the current OpenPort server implementation.
 
-Create:
-
-```text
-server.py
-```
-
-Paste the current OpenPort server implementation into this file.
-
-## 5. Run the server
+## 4. Run the server
 
 ```bash
 python3 server.py
 ```
 
-You should see:
+Expected startup output:
 
 ```text
-Control server: 9000
-Data server: 9001
-Public server: 25565
+Control server listening on 9000
+Data server listening on 9001
 ```
 
 ---
@@ -217,9 +301,7 @@ Public server: 25565
 
 The agent runs on the computer hosting the application.
 
-## 1. Clone or copy the project
-
-The current structure is:
+Example:
 
 ```text
 OpenPort/
@@ -227,212 +309,259 @@ OpenPort/
     └── agent.py
 ```
 
-Navigate to the client directory:
-
-```powershell
-cd OpenPort\client
-```
-
-## 2. Configure the agent
-
-Open `agent.py`.
-
-Configure the public server:
-
-```python
-SERVER_HOST = "YOUR_SERVER_IP"
-```
-
-Example:
+Configure the OpenPort server address in `agent.py`:
 
 ```python
 SERVER_HOST = "20.198.81.254"
-```
-
-Configure the ports:
-
-```python
 CONTROL_PORT = 9000
 DATA_PORT = 9001
-
 LOCAL_HOST = "127.0.0.1"
-LOCAL_PORT = 25565
-```
-
-`LOCAL_PORT` must match the port where your application is running.
-
-For example:
-
-```text
-FastAPI
-127.0.0.1:25565
 ```
 
 ---
 
 # Running the Agent
 
-Start the agent:
+The local port is required.
 
-```powershell
-python agent.py
-```
-
-Expected output:
+If an application is running on:
 
 ```text
-Connecting to OpenPort 20.198.81.254:9000
-Connected to OpenPort
+127.0.0.1:3000
 ```
 
-The agent will automatically attempt to reconnect if the control connection is lost.
+run:
 
----
-
-# Exposing a Local Application
-
-Suppose you have an application running on:
-
-```text
-127.0.0.1:25565
+```bash
+python agent.py --local-port 3000
 ```
 
-Start OpenPort:
+The agent first attempts:
 
 ```text
-Azure Server
-    ↓
-python3 server.py
+25565
 ```
 
-Then start the agent:
+If unavailable, it automatically searches for a free random port between:
 
 ```text
-Your Computer
-    ↓
-python agent.py
-```
-
-Your local application should now be accessible through:
-
-```text
-http://YOUR_SERVER_IP:25565
+20000–30000
 ```
 
 For example:
 
 ```text
+[connected] Connected to OpenPort server
+[trying] Attempting to register port 25565
+[connected] Public tunnel active on port 25565
+```
+
+If `25565` is already occupied:
+
+```text
+[trying] Attempting to register port 25565
+[trying] Port 25565 unavailable
+[trying] Trying random port 28061
+[connected] Public tunnel active on port 28061
+```
+
+The local application would then be accessible at:
+
+```text
+20.198.81.254:28061
+```
+
+---
+
+# Example: FastAPI
+
+Suppose FastAPI runs locally on:
+
+```text
+127.0.0.1:3000
+```
+
+Start FastAPI:
+
+```bash
+uvicorn main:app --host 127.0.0.1 --port 3000
+```
+
+Start OpenPort:
+
+```bash
+python agent.py --local-port 3000
+```
+
+If OpenPort assigns `25565`, visiting:
+
+```text
 http://20.198.81.254:25565
 ```
 
-If you are running FastAPI, you can test:
+forwards traffic to:
+
+```text
+http://127.0.0.1:3000
+```
+
+Swagger docs would be available through:
 
 ```text
 http://20.198.81.254:25565/docs
+```
+
+if the tunnel is assigned port `25565`.
+
+---
+
+# Multiple Agents
+
+The current server supports multiple agents.
+
+```text
+Agent A
+Local service: 3000
+        │
+        ▼
+Public port: 25565
+
+Agent B
+Local service: 8080
+        │
+        ▼
+Public port: 28061
+
+Agent C
+Local service: 5000
+        │
+        ▼
+Public port: 29040
+```
+
+The server tracks which agent owns each public tunnel and forwards incoming connections to the appropriate agent.
+
+---
+
+# Multiple Simultaneous Connections
+
+Multiple users can connect to the same public port simultaneously.
+
+```text
+Client A ──┐
+           │
+Client B ──┼────► OpenPort Server
+           │
+Client C ──┘
+                    │
+                    ├── Tunnel A ──► Local Service
+                    ├── Tunnel B ──► Local Service
+                    └── Tunnel C ──► Local Service
+```
+
+Each public connection gets:
+
+```text
+Unique UUID
++
+Dedicated data connection
+```
+
+This keeps application traffic separate from control messages.
+
+---
+
+# Logging
+
+The current version uses clearer colored status logs.
+
+## Green — `[connected]`
+
+Used for successful events:
+
+```text
+[connected] Agent connected
+[connected] Tunnel registered
+[connected] Tunnel established
+```
+
+## Yellow — `[trying]`
+
+Used while setting up or waiting for a connection:
+
+```text
+[trying] Registering tunnel
+[trying] Waiting for agent
+[trying] Attempting data connection
+```
+
+## Red — `[error]`
+
+Used for failures, timeouts, disconnections, and cleanup:
+
+```text
+[error] Agent disconnected
+[error] Tunnel on port 28061 removed
+[error] Agent timed out
+[error] Connection failed
 ```
 
 ---
 
 # Azure Configuration
 
-The Azure VM requires inbound TCP rules for the following ports:
+The Azure VM Network Security Group must allow inbound TCP traffic for:
 
-| Port | Protocol | Purpose |
+| Port / Range | Protocol | Purpose |
 |---|---|---|
 | `22` | TCP | SSH |
-| `9000` | TCP | Agent control connection |
-| `9001` | TCP | Agent data connections |
-| `25565` | TCP | Public exposed application |
+| `9000` | TCP | OpenPort control channel |
+| `9001` | TCP | OpenPort data channel |
+| `25565` | TCP | Default public tunnel |
+| `20000–30000` | TCP | Dynamic public tunnel range |
 
-For development, these ports can be temporarily opened to the internet.
+The `20000–30000` range is required because the server dynamically listens on ports within that range.
 
-## Important
-
-Ports `9000` and `9001` currently have no authentication.
-
-Do not use this version in production.
-
-Anyone who can connect to these ports could potentially interact with the OpenPort server.
-
-Authentication and secure agent identification are planned for future versions.
+Without allowing this range through the Azure Network Security Group, OpenPort may register a tunnel successfully but external users will not be able to connect to it.
 
 ---
 
-# Architecture
-
-OpenPort uses three separate TCP services.
-
-## Control Channel
-
-The agent maintains a persistent connection to:
+# Current Architecture
 
 ```text
-SERVER_IP:9000
+                    ┌─────────────────────┐
+                    │    Internet User    │
+                    └──────────┬──────────┘
+                               │
+                               ▼
+                 SERVER_IP:PUBLIC_PORT
+                               │
+                               ▼
+                    ┌─────────────────────┐
+                    │   OpenPort Server   │
+                    │                     │
+                    │ Control → 9000      │
+                    │ Data    → 9001      │
+                    │                     │
+                    │ Public Ports        │
+                    │ 25565               │
+                    │ 20000–30000         │
+                    └──────────┬──────────┘
+                               │
+                               │ Persistent outbound
+                               │ connection
+                               ▼
+                    ┌─────────────────────┐
+                    │   OpenPort Agent    │
+                    └──────────┬──────────┘
+                               │
+                               ▼
+                    ┌─────────────────────┐
+                    │    Local Service    │
+                    │                     │
+                    │127.0.0.1:LOCAL_PORT │
+                    └─────────────────────┘
 ```
-
-The server sends commands such as:
-
-```text
-CONNECT <connection-id>
-```
-
-Example:
-
-```text
-CONNECT ef024f68-5068-4deb-a362-89a2fb5042d5
-```
-
-## Data Channel
-
-When a public user connects, the server generates a UUID.
-
-The agent:
-
-1. Connects to the local application.
-2. Opens a new connection to the server on port `9001`.
-3. Identifies the connection using:
-
-```text
-DATA <connection-id>
-```
-
-The server then matches this data connection with the waiting public client.
-
-## Public Port
-
-The public server listens on:
-
-```text
-SERVER_IP:25565
-```
-
-Traffic is forwarded through a dedicated tunnel to:
-
-```text
-127.0.0.1:25565
-```
-
----
-
-# Multiple Connections
-
-The current version supports multiple simultaneous TCP connections.
-
-For example:
-
-```text
-Client A ─┐
-Client B ─┼──► OpenPort Server
-Client C ─┘
-                 │
-                 ├── Tunnel A ──► Local Service
-                 ├── Tunnel B ──► Local Service
-                 └── Tunnel C ──► Local Service
-```
-
-Each public connection receives its own UUID and dedicated data tunnel.
-
-This avoids mixing application traffic with control messages.
 
 ---
 
@@ -440,118 +569,169 @@ This avoids mixing application traffic with control messages.
 
 OpenPort is currently an experimental proof of concept.
 
-Known limitations include:
+Known limitations:
 
 - TCP only
-- No UDP support
-- Ports are currently hardcoded
+- No UDP forwarding yet
 - No authentication
 - No encryption
 - No TLS
-- No domain management
+- No agent tokens
+- No domain or subdomain routing
+- No persistent tunnel configuration
 - No user accounts
-- No tunnel management dashboard
-- No automatic port allocation
+- No dashboard
+- No rate limiting
+- No abuse protection
 - No packaged executable
-- No persistent system service setup
+- The Azure public port range must still be explicitly allowed
+- Random port allocation only checks OpenPort tunnel availability and does not bypass firewall rules
+
+---
+
+# Security Warning
+
+The current version is not production-ready.
+
+Ports:
+
+```text
+9000
+9001
+```
+
+currently do not use authentication or encryption.
+
+A production version should add:
+
+- Agent authentication tokens
+- TLS encryption
+- Secure registration
+- Tunnel ownership
+- User identities
+- Port authorization
+- Rate limiting
+- Connection limits
+- Firewall restrictions
+- Abuse prevention
 
 ---
 
 # Planned Features
 
-Future versions may include:
+## Phase 1 — Core Improvements
 
-## Configurable Ports
+- Optional `--public-port` override
+- Better tunnel registration protocol
+- Server-assigned ports
+- Agent heartbeat
+- Automatic stale-agent detection
+- Cleaner shutdown handling
+- Persistent server process using `systemd`
 
-Instead of editing Python files:
+## Phase 2 — Security
 
-```bash
-openport expose 25565
-```
+- Agent authentication tokens
+- TLS encryption
+- Secure registration
+- Tunnel ownership
+- User accounts
 
-Or:
+## Phase 3 — UDP
 
-```bash
-python agent.py --local-port 25565 --public-port 25565
-```
+Planned support for:
 
-## Domain Support
-
-Eventually:
-
-```text
-hrick.in:25565
-```
-
-Could forward to:
-
-```text
-localhost:25565
-```
-
-## Authentication
-
-Agents will authenticate with the server using tokens or keys.
-
-Example:
-
-```text
-openport connect --token YOUR_TOKEN
-```
-
-## UDP Support
-
-This is required for games and services that use UDP.
-
-Potential use cases:
-
+- Minecraft Bedrock
 - Game servers
 - Voice servers
 - Real-time applications
 
-## Standalone Agent
+UDP will require a different forwarding architecture from the current TCP stream-based implementation.
 
-The Python agent could eventually be packaged into an executable:
+## Phase 4 — Domain Support
+
+Eventually, OpenPort could support:
+
+```text
+hrick.in
+```
+
+or:
+
+```text
+myproject.hrick.in
+```
+
+For HTTP services:
+
+```text
+myapp.hrick.in
+        ↓
+OpenPort
+        ↓
+127.0.0.1:3000
+```
+
+## Phase 5 — CLI
+
+Eventually:
+
+```bash
+openport expose 3000
+```
+
+Example output:
+
+```text
+[connected] OpenPort tunnel active
+
+Public address:
+
+20.198.81.254:25565
+
+Forwarding to:
+
+127.0.0.1:3000
+```
+
+## Phase 6 — Packaged Agent
+
+The agent could eventually be packaged as:
 
 ```text
 openport.exe
 ```
 
-Allowing users to run:
+allowing users to run:
 
 ```bash
-openport expose 25565
+openport expose 3000
 ```
 
-without installing Python.
+without manually installing Python.
 
 ---
 
 # Development Status
 
-Current version:
-
 ```text
-OpenPort v0.2
-```
-
-Status:
-
-```text
+OpenPort v0.3
 Experimental / Proof of Concept
 ```
 
-Successfully tested with:
+Currently tested with:
 
 ```text
 FastAPI
-127.0.0.1:25565
+127.0.0.1:3000
         ↓
 OpenPort Agent
         ↓
 Azure VM
         ↓
-Public Internet
+Public IP + Dynamic Port
+        ↓
+Internet
 ```
 
-The current version demonstrates the core functionality of OpenPort: exposing a localhost TCP service through a publicly accessible relay server.
+The current version demonstrates the core functionality of OpenPort: exposing a local TCP service through a publicly accessible relay server with automatic fallback public port allocation.
