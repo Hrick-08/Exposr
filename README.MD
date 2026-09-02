@@ -210,6 +210,15 @@ The token is sent with every control registration request. The server closes
 connections whose token does not match its configured token before accepting
 the agent or opening a public tunnel.
 
+On the relay server, initialize the token by pasting the generated value:
+
+```bash
+exposr server init-token PASTE_TOKEN_HERE
+```
+
+This writes the token to the server's `~/.exposr/config.json` while preserving
+other configuration values.
+
 The value is saved in:
 
 ```text

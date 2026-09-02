@@ -8,6 +8,16 @@ from common.logger import error, info
 
 def main():
     args = parse_arguments()
+    if args.command == "server":
+        from server.config import init_token
+
+        if args.server_command == "init-token":
+            if not args.agent_token.strip():
+                error("Agent token cannot be empty")
+                return
+            init_token(args.agent_token)
+            info("Agent token saved to ~/.exposr/config.json")
+        return
     if args.command == "config":
         if args.config_command == "set-server":
             set_server(args.server_host)

@@ -27,6 +27,15 @@ def parse_arguments(argv=None):
     )
     set_server_parser.add_argument("server_host")
 
+    server_parser = subparsers.add_parser("server", help="Manage the Exposr relay server")
+    server_subparsers = server_parser.add_subparsers(
+        dest="server_command", required=True
+    )
+    init_token_parser = server_subparsers.add_parser(
+        "init-token", help="Set the relay server agent token"
+    )
+    init_token_parser.add_argument("agent_token")
+
     parser.add_argument("--server-host", default=None)
     parser.add_argument("--control-port", type=int, default=9000)
     parser.add_argument("--data-port", type=int, default=9001)
