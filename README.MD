@@ -1,9 +1,9 @@
 ```text
    ____                   ____            _
   / __ \                 |  _ \          | |
- | |  | |_ __   ___ _ __ | |_) |__  _ __ | |_
+ | |  | |_ __   ___ _ __ | |_) |__  _ __ | |_ 
  | |  | | '_ \ / _ \ '_ \|  ___/ _ \| '__| __|
- | |__| | |_) |  __/ | | | |  | (_) | |  | |_
+ | |__| | |_) |  __/ | | | |  | (_) | |  | |_ 
   \____/| .__/ \___|_| |_|_|   \___/|_|   \__|
         | |
         |_|
@@ -13,36 +13,37 @@
 
 OpenPort is a reverse TCP tunneling project that exposes services running on a user's local machine to the public internet through a remote relay server.
 
-The current version is built with Python and uses a public server as the relay.
+The project is built with Python and uses a public server as the relay. The agent maintains a persistent control connection and creates a dedicated data connection for every incoming public connection.
 
 ## Current Version
 
-**OpenPort v0.3 — Experimental / Proof of Concept**
+**OpenPort v0.4 - Experimental / Proof of Concept**
 
 ### Current capabilities
 
 - Reverse TCP tunneling
 - Localhost service exposure
 - Dynamic public port registration
-- Default public port: `25565`
+- Default preferred public port: `25565`
 - Automatic fallback to a random available port
-- Random fallback range: `20000–30000`
-- Port availability checking before assignment
+- Random fallback range: `20000-30000`
+- Port availability checking through server registration
 - Persistent agent connection
 - Automatic agent reconnection
 - Multiple simultaneous public connections
 - Dedicated data tunnel per connection
 - UUID-based connection identification
 - Async networking using Python `asyncio`
-- Colored logs for connected, trying, and error events
+- Colored logs for connected, trying, error, and info events
 - Command-line interface
-- Simple tunnel syntax:
+
+Simple tunnel syntax:
 
 ```bash
 openport expose 3000
 ```
 
-- Optional public port:
+Optional public port:
 
 ```bash
 openport expose 3000 to 21342
@@ -66,41 +67,29 @@ openport expose 3000
 
 The agent creates an outbound connection to the OpenPort relay server.
 
-By default, it attempts to register public port:
-
-```text
-25565
-```
-
-If `25565` is already owned by another tunnel, OpenPort selects a random port between:
-
-```text
-20000–30000
-```
-
-It checks whether the selected port is available and continues trying until it successfully registers a free port.
+By default, it attempts to register public port `25565`. If that port is already owned by another tunnel, OpenPort selects a random port between `20000-30000`. Each random port is sent to the server for registration; a port is not assumed to be available merely because it was randomly selected.
 
 ```text
 Your PC
 127.0.0.1:3000
-        │
-        ▼
+        |
+        v
  OpenPort Agent
-        │
-        │ Persistent control connection
-        ▼
-┌──────────────────────────┐
-│     OpenPort Server      │
-│                          │
-│ Control Port: 9000       │
-│ Data Port:    9001       │
-│                          │
-│ Public Ports:            │
-│ 25565                    │
-│ 20000–30000              │
-└─────────────┬────────────┘
-              │
-              ▼
+        |
+        | Persistent control connection
+        v
++--------------------------+
+|     OpenPort Server      |
+|                          |
+| Control Port: 9000       |
+| Data Port:    9001       |
+|                          |
+| Public Ports:            |
+| 25565                    |
+| 20000-30000              |
++-------------+------------+
+              |
+              v
        Internet Users
 ```
 
@@ -108,20 +97,20 @@ Example forwarding path:
 
 ```text
 Internet User
-      │
-      ▼
+      |
+      v
 SERVER_IP:25565
-      │
-      ▼
+      |
+      v
 OpenPort Server
-      │
-      ▼
+      |
+      v
 OpenPort Agent
-      │
-      ▼
+      |
+      v
 127.0.0.1:3000
-      │
-      ▼
+      |
+      v
 Your Application
 ```
 
@@ -133,17 +122,32 @@ The application continues running on the user's computer. The relay server only 
 
 ```text
 OpenPort/
-│
-├── client/
-│   └── agent.py
-│
-├── server/
-│   └── server.py
-│
-├── setup.py
-│
-└── README.md
+|
++-- client/
+|   +-- __init__.py
+|   +-- cli.py
+|   +-- connection.py
+|   +-- tunnel.py
+|   +-- main.py
+|
++-- common/
+|   +-- __init__.py
+|   +-- logger.py
+|   +-- protocol.py
+|
++-- server/
+|   +-- __init__.py
+|   +-- control.py
+|   +-- data.py
+|   +-- tunnel.py
+|   +-- ports.py
+|   +-- main.py
+|
++-- setup.py
++-- README.md
 ```
+
+The old monolithic `client/agent.py` and `server/server.py` files are no longer active implementations. Shared logging and protocol messages live in `common/`; client and server responsibilities are separated into their respective packages.
 
 ---
 
@@ -151,23 +155,10 @@ OpenPort/
 
 OpenPort can be installed as a command-line tool.
 
-After installation, the agent can be started from anywhere using:
-
-```bash
-openport expose <local-port>
-```
-
-## Install from Source
-
-Clone the repository:
+Clone the repository and navigate into the project:
 
 ```bash
 git clone YOUR_REPOSITORY_URL
-```
-
-Navigate into the project:
-
-```bash
 cd OpenPort
 ```
 
@@ -183,7 +174,7 @@ For development, use an editable installation:
 python -m pip install -e .
 ```
 
-The editable installation means changes made to the source code are immediately used without reinstalling the package.
+The console command is provided by the `client.main:main` entry point. The editable installation means source changes are immediately used without reinstalling the package.
 
 ---
 
@@ -203,86 +194,16 @@ Find the Python user base directory:
 python -m site --user-base
 ```
 
-Then add the `Scripts` directory inside that location to your Windows `PATH`.
-
-For Microsoft Store Python installations, the location may look similar to:
-
-```text
-C:\Users\YOUR_USERNAME\AppData\Local\Packages\
-PythonSoftwareFoundation.Python.3.12_...\LocalCache\
-local-packages\Python312\Scripts
-```
-
-For other Python installations, it may instead look like:
-
-```text
-C:\Users\YOUR_USERNAME\AppData\Roaming\Python\Python312\Scripts
-```
-
-The exact location depends on how Python was installed.
-
-To check where `openport.exe` exists, run:
+Then add the `Scripts` directory inside that location to the Windows `PATH`. To check where `openport.exe` exists, run:
 
 ```cmd
 where openport
 ```
 
-If it is not found, search the Python Scripts directory manually.
-
-After adding the correct directory to `PATH`, close all existing terminals and open a new terminal.
-
-Verify:
-
-```cmd
-where openport
-```
-
-Expected output:
-
-```text
-C:\...\Scripts\openport.exe
-```
-
-Then:
+After adding the correct directory to `PATH`, close existing terminals and open a new terminal. Verify with `where openport`, then run:
 
 ```cmd
 openport expose 3000
-```
-
----
-
-# Installing for Development
-
-While developing OpenPort, use:
-
-```cmd
-python -m pip install -e .
-```
-
-This creates an editable installation.
-
-Your workflow becomes:
-
-```text
-Edit agent.py
-      ↓
-Run OpenPort
-      ↓
-Changes are immediately used
-```
-
-For example:
-
-```cmd
-openport expose 3000
-```
-
-You do not need to reinstall OpenPort after every code change.
-
-If the console command itself changes or stops working, reinstall:
-
-```cmd
-python -m pip install -e .
 ```
 
 ---
@@ -297,25 +218,16 @@ Expose a local service running on port `3000`:
 openport expose 3000
 ```
 
-OpenPort will attempt to expose it on:
+OpenPort attempts to expose it on `SERVER_IP:25565`. If `25565` is unavailable, a random port between `20000` and `30000` is selected and checked with the server.
+
+Optional connection settings can be supplied with:
 
 ```text
-SERVER_IP:25565
+--server-host
+--control-port
+--data-port
+--local-host
 ```
-
-If `25565` is unavailable, a random free port between `20000` and `30000` will be assigned.
-
-Example:
-
-```text
-[TRYING] Connecting to OpenPort SERVER_IP:9000
-[CONNECTED] Connected to OpenPort control server
-[TRYING] Trying to register public port 25565
-[CONNECTED] Public tunnel active: SERVER_IP:25565
-[CONNECTED] Forwarding to: 127.0.0.1:3000
-```
-
----
 
 ## Specify a Public Port
 
@@ -328,38 +240,13 @@ openport expose 3000 to 21342
 This forwards:
 
 ```text
-Local:
-
-127.0.0.1:3000
+127.0.0.1:3000  ->  SERVER_IP:21342
 ```
 
-to:
-
-```text
-Public:
-
-SERVER_IP:21342
-```
-
-Example:
-
-```text
-[TRYING] Connecting to OpenPort SERVER_IP:9000
-[CONNECTED] Connected to OpenPort control server
-[TRYING] Trying to register public port 21342
-[CONNECTED] Public tunnel active: SERVER_IP:21342
-[CONNECTED] Forwarding to: 127.0.0.1:3000
-```
-
-The syntax is:
+The general syntax is:
 
 ```text
 openport expose <local-port>
-```
-
-or:
-
-```text
 openport expose <local-port> to <public-port>
 ```
 
@@ -367,76 +254,41 @@ Examples:
 
 ```bash
 openport expose 3000
-
 openport expose 8080
-
 openport expose 5000 to 25000
-
 openport expose 25565 to 25565
 ```
+
+When a public port is explicitly specified, OpenPort requests that exact port and does not silently replace it with a random port.
 
 ---
 
 # Port Assignment
 
-When no public port is specified:
-
-```bash
-openport expose 3000
-```
-
-OpenPort attempts:
+When no public port is specified, OpenPort attempts `25565` first:
 
 ```text
 25565
-```
-
-If unavailable:
-
-```text
-25565
-  │
-  ▼
+  |
+  v
 available?
-  │
-  ├── yes → register tunnel
-  │
-  └── no
-        │
-        ▼
-random port from 20000–30000
-        │
-        ▼
+  |
+  +-- yes -> register tunnel
+  |
+  +-- no
+        |
+        v
+random port from 20000-30000
+        |
+        v
 available?
-  │
-  ├── yes → register tunnel
-  │
-  └── no → try another random port
+  |
+  +-- yes -> register tunnel
+  |
+  +-- no -> try another random port
 ```
 
-Example:
-
-```text
-Agent A
-Local: 3000
-Public: 25565
-
-Agent B
-Local: 8080
-Public: 28061
-
-Agent C
-Local: 5000
-Public: 29040
-```
-
-When a public port is explicitly specified:
-
-```bash
-openport expose 3000 to 21342
-```
-
-OpenPort requests that exact port.
+The agent retries up to the existing maximum of 100 registration attempts. The server tracks ownership and releases public ports when an agent disconnects.
 
 ---
 
@@ -446,10 +298,12 @@ OpenPort requests that exact port.
 |---|---|
 | `9000` | Persistent agent control channel |
 | `9001` | Dedicated data tunnel connections |
-| `25565` | Default public port |
-| `20000–30000` | Dynamic fallback public port range |
+| `25565` | Default preferred public port |
+| `20000-30000` | Dynamic fallback public port range |
 
-## Port 9000 — Control Channel
+The relay host or Azure firewall must allow inbound TCP traffic for all of these ports and ranges.
+
+## Port 9000 - Control Channel
 
 The agent maintains a persistent connection to:
 
@@ -475,7 +329,7 @@ Example:
 CONNECT 8bab2f9a-b0e2-4db2-8fed-9a8dda8e3aed
 ```
 
-## Port 9001 — Data Channel
+## Port 9001 - Data Channel
 
 For each incoming public connection:
 
@@ -494,21 +348,6 @@ DATA <connection-id>
 
 Each public client receives a separate data connection.
 
-## Public Ports
-
-Public tunnels are created dynamically.
-
-Examples:
-
-```text
-SERVER_IP:25565
-SERVER_IP:21342
-SERVER_IP:28061
-SERVER_IP:29040
-```
-
-Each port belongs to a specific connected agent.
-
 ---
 
 # Requirements
@@ -516,16 +355,8 @@ Each port belongs to a specific connected agent.
 ## Server
 
 - Python 3.10+
-- Linux server, VPS, or any machine with a reachable public IP address
-- Open inbound TCP ports
-
-Tested with:
-
-```text
-Ubuntu 24.04
-Python 3.12
-Microsoft Azure Virtual Machine
-```
+- Linux server, VPS, Azure VM, or another machine with a reachable public IP
+- Open inbound TCP ports `9000`, `9001`, `25565`, and `20000-30000`
 
 ## Client
 
@@ -537,64 +368,25 @@ Microsoft Azure Virtual Machine
 
 # Server Setup
 
-## 1. Connect to the server
+From the project directory on the relay machine, install the package:
 
 ```bash
-ssh USERNAME@YOUR_SERVER_IP
+python3 -m pip install .
 ```
 
-## 2. Install Python
+Start the relay server:
 
 ```bash
-sudo apt update
-sudo apt install -y python3 python3-pip
+python3 -m server.main
 ```
 
-Verify:
-
-```bash
-python3 --version
-```
-
-## 3. Create the project directory
-
-```bash
-mkdir -p ~/openport
-cd ~/openport
-```
-
-Create:
-
-```text
-server.py
-```
-
-Paste the OpenPort server implementation.
-
-## 4. Run the server
-
-```bash
-python3 server.py
-```
-
-Expected startup output:
-
-```text
-Control server listening on 9000
-Data server listening on 9001
-```
+Expected startup messages identify the control listener on `9000` and the data listener on `9001`.
 
 ---
 
 # Example: FastAPI
 
-Suppose FastAPI runs locally on:
-
-```text
-127.0.0.1:3000
-```
-
-Start FastAPI:
+Suppose FastAPI runs locally on `127.0.0.1:3000`:
 
 ```bash
 uvicorn main:app --host 127.0.0.1 --port 3000
@@ -606,93 +398,33 @@ Start OpenPort:
 openport expose 3000
 ```
 
-If OpenPort assigns `25565`, visiting:
-
-```text
-http://SERVER_IP:25565
-```
-
-forwards traffic to:
-
-```text
-http://127.0.0.1:3000
-```
-
-Swagger documentation would be available through:
-
-```text
-http://SERVER_IP:25565/docs
-```
-
-if the tunnel is assigned port `25565`.
-
-You can also explicitly choose a port:
-
-```bash
-openport expose 3000 to 21342
-```
-
-Then access:
-
-```text
-http://SERVER_IP:21342
-```
+If OpenPort assigns `25565`, visiting `http://SERVER_IP:25565` forwards traffic to `http://127.0.0.1:3000`. Swagger documentation is available through `http://SERVER_IP:25565/docs` when that public port is assigned.
 
 ---
 
 # Multiple Agents
 
-The server supports multiple agents.
+The server supports multiple agents. Each agent can own a different public port, while the server tracks the owner of each tunnel:
 
 ```text
-Agent A
-Local service: 3000
-        │
-        ▼
-Public port: 25565
-
-Agent B
-Local service: 8080
-        │
-        ▼
-Public port: 28061
-
-Agent C
-Local service: 5000
-        │
-        ▼
-Public port: 29040
+Agent A: 127.0.0.1:3000  ->  SERVER_IP:25565
+Agent B: 127.0.0.1:8080  ->  SERVER_IP:28061
+Agent C: 127.0.0.1:5000  ->  SERVER_IP:29040
 ```
-
-The server tracks which agent owns each public tunnel and forwards incoming connections to the appropriate agent.
-
----
 
 # Multiple Simultaneous Connections
 
-Multiple users can connect to the same public port simultaneously.
+Multiple users can connect to the same public port simultaneously. Every connection receives a unique UUID and a dedicated data connection:
 
 ```text
-Client A ──┐
-           │
-Client B ──┼────► OpenPort Server
-           │
-Client C ──┘
-                    │
-                    ├── Tunnel A ──► Local Service
-                    ├── Tunnel B ──► Local Service
-                    └── Tunnel C ──► Local Service
+Client A --+
+           |
+Client B --+----> OpenPort Server
+           |             |
+Client C --+             +-- Tunnel A --> Local Service
+                         +-- Tunnel B --> Local Service
+                         +-- Tunnel C --> Local Service
 ```
-
-Each public connection receives:
-
-```text
-Unique UUID
-+
-Dedicated data connection
-```
-
-This keeps application traffic separate from control messages.
 
 ---
 
@@ -700,37 +432,21 @@ This keeps application traffic separate from control messages.
 
 OpenPort uses colored status logs.
 
-## Green — `[CONNECTED]`
+## Green - `[CONNECTED]`
 
-Used for successful events:
+Used for successful connections and active tunnels.
 
-```text
-[CONNECTED] Connected to OpenPort control server
-[CONNECTED] Public tunnel active
-[CONNECTED] Tunnel established
-```
+## Yellow - `[TRYING]`
 
-## Yellow — `[TRYING]`
+Used while connecting, registering ports, and creating tunnels.
 
-Used while setting up connections:
+## Red - `[ERROR]`
 
-```text
-[TRYING] Connecting to OpenPort
-[TRYING] Trying to register public port
-[TRYING] Setting up connection
-[TRYING] Opening data connection
-```
+Used for failures, timeouts, disconnections, and cleanup.
 
-## Red — `[ERROR]`
+## Blue - `[INFO]`
 
-Used for failures, timeouts, disconnections, and cleanup:
-
-```text
-[ERROR] Agent disconnected
-[ERROR] Tunnel on port 28061 removed
-[ERROR] Agent timed out
-[ERROR] Connection failed
-```
+Used for informational messages such as clean shutdown.
 
 ---
 
@@ -740,52 +456,49 @@ The relay server firewall or cloud security rules must allow inbound TCP traffic
 
 | Port / Range | Protocol | Purpose |
 |---|---|---|
-| `22` | TCP | SSH |
+| `22` | TCP | SSH, if required for administration |
 | `9000` | TCP | OpenPort control channel |
 | `9001` | TCP | OpenPort data channel |
-| `20000–30000` | TCP | Dynamic public tunnel range |
+| `20000-30000` | TCP | Dynamic public tunnel range |
 
-The `20000–30000` range is required because OpenPort dynamically listens on ports within this range.
-
-Without allowing these ports through the cloud firewall or Network Security Group, OpenPort may successfully register a tunnel internally while external users cannot reach it.
+The `20000-30000` range is required because OpenPort dynamically listens on ports within that range. Without allowing these ports through the cloud firewall or Network Security Group, OpenPort may register a tunnel internally while external users cannot reach it.
 
 ---
 
 # Current Architecture
 
 ```text
-                    ┌─────────────────────┐
-                    │    Internet User    │
-                    └──────────┬──────────┘
-                               │
-                               ▼
+                    +---------------------+
+                    |    Internet User    |
+                    +----------+----------+
+                               |
+                               v
                  SERVER_IP:PUBLIC_PORT
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │   OpenPort Server   │
-                    │                     │
-                    │ Control → 9000      │
-                    │ Data    → 9001      │
-                    │                     │
-                    │ Public Ports        │
-                    │ 25565               │
-                    │ 20000–30000         │
-                    └──────────┬──────────┘
-                               │
-                               │ Persistent outbound
-                               │ control connection
-                               ▼
-                    ┌─────────────────────┐
-                    │   OpenPort Agent    │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │    Local Service    │
-                    │                     │
-                    │127.0.0.1:LOCAL_PORT │
-                    └─────────────────────┘
+                               |
+                               v
+                    +---------------------+
+                    |   OpenPort Server   |
+                    |                     |
+                    | Control -> 9000     |
+                    | Data    -> 9001     |
+                    |                     |
+                    | Public Ports        |
+                    | 25565               |
+                    | 20000-30000         |
+                    +----------+----------+
+                               |
+                               | Persistent outbound
+                               | control connection
+                               v
+                    +---------------------+
+                    |   OpenPort Agent    |
+                    +----------+----------+
+                               |
+                               v
+                    +---------------------+
+                    |    Local Service    |
+                    | 127.0.0.1:LOCAL_PORT|
+                    +---------------------+
 ```
 
 ---
@@ -797,18 +510,14 @@ OpenPort is currently an experimental proof of concept.
 Known limitations:
 
 - TCP only
-- No UDP forwarding yet
+- No UDP forwarding
 - No authentication
-- No encryption
-- No TLS
+- No encryption or TLS
 - No agent tokens
 - No domain or subdomain routing
 - No persistent tunnel configuration
-- No user accounts
-- No dashboard
-- No rate limiting
-- No abuse protection
-- No packaged standalone executable
+- No user accounts or dashboard
+- No rate limiting or abuse protection
 - Public port ranges must be explicitly allowed by the server firewall
 - Random port allocation does not bypass firewall or cloud security rules
 
@@ -816,133 +525,36 @@ Known limitations:
 
 # Security Warning
 
-The current version is not production-ready.
-
-Ports:
-
-```text
-9000
-9001
-```
-
-currently do not use authentication or encryption.
-
-A production version should add:
-
-- Agent authentication tokens
-- TLS encryption
-- Secure registration
-- Tunnel ownership
-- User identities
-- Port authorization
-- Rate limiting
-- Connection limits
-- Firewall restrictions
-- Abuse prevention
-
-Do not expose the control and data ports publicly in a production deployment without authentication and encryption.
+The current version is not production-ready. Ports `9000` and `9001` do not use authentication or encryption. Do not expose the control and data ports publicly in a production deployment without appropriate security controls.
 
 ---
 
 # Planned Features
 
-## Phase 1 — Core Improvements
+Possible future improvements include:
 
 - Server-assigned ports
-- Agent heartbeat
-- Automatic stale-agent detection
-- Better tunnel registration protocol
-- Cleaner shutdown handling
-- Persistent server process using `systemd`
-
-## Phase 2 — Security
-
+- Agent heartbeat and stale-agent detection
+- Improved tunnel registration
+- Persistent server operation using `systemd`
 - Agent authentication tokens
 - TLS encryption
-- Secure registration
-- Tunnel ownership
-- User accounts
+- Domain support
+- UDP support
+- CLI status and tunnel management commands
 
-## Phase 3 — UDP
-
-Planned support for:
-
-- Minecraft Bedrock
-- Game servers
-- Voice servers
-- Real-time applications
-
-UDP will require a different forwarding architecture from the current TCP stream-based implementation.
-
-## Phase 4 — Domain Support
-
-Eventually:
-
-```text
-myapp.example.com
-        ↓
-OpenPort
-        ↓
-127.0.0.1:3000
-```
-
-## Phase 5 — CLI Improvements
-
-Future CLI functionality could include:
-
-```bash
-openport expose 3000
-
-openport expose 3000 to 25000
-
-openport status
-
-openport tunnels
-
-openport stop
-```
-
-## Phase 6 — Packaged Agent
-
-Eventually, OpenPort could be distributed as a standalone executable:
-
-```text
-openport.exe
-```
-
-allowing users to run:
-
-```bash
-openport expose 3000
-```
-
-without manually installing Python.
+These are not part of the current protocol or implementation.
 
 ---
 
 # Development Status
 
 ```text
-OpenPort v0.3
+OpenPort v0.4
 Experimental / Proof of Concept
 ```
 
-Currently tested with:
-
-```text
-FastAPI
-127.0.0.1:3000
-        ↓
-OpenPort Agent
-        ↓
-Public Relay Server
-        ↓
-Public IP + Dynamic Port
-        ↓
-Internet
-```
-
-The current version demonstrates the core functionality of OpenPort: exposing a local TCP service through a publicly accessible relay server with dynamic port registration, automatic fallback allocation, and a command-line interface.
+The current version demonstrates the core functionality of OpenPort: exposing a local TCP service through a publicly accessible relay server with dynamic port registration, automatic fallback allocation, dedicated per-connection data tunnels, and a command-line interface.
 
 ---
 
@@ -964,7 +576,7 @@ openport expose 3000 to 21342
 # Expose another local service
 openport expose 8080
 
-# Expose a Minecraft Java server on its default port
+# Expose a Minecraft Java server on its default local port
 openport expose 25565
 ```
 
@@ -974,4 +586,4 @@ The general syntax is:
 openport expose <local-port> to <public-port>
 ```
 
-If `<public-port>` is omitted, OpenPort tries `25565` first and then automatically falls back to a random available port between `20000` and `30000`.
+If `<public-port>` is omitted, OpenPort tries `25565` first and then falls back to a random available port between `20000` and `30000`.

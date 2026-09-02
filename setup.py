@@ -1,13 +1,9 @@
-from setuptools import setup
+from setuptools import find_packages, setup
+
 
 setup(
     name="openport",
-    version="0.2.0",
-    py_modules=["agent"],
-    package_dir={"": "client"},
-    entry_points={
-        "console_scripts": [
-            "openport=agent:main",
-        ],
-    },
+    version="0.4.0",
+    packages=find_packages(),
+    entry_points={"console_scripts": ["openport=client.main:main"]},
 )
