@@ -1,14 +1,29 @@
 import asyncio
 
 from client.cli import parse_arguments
+from client.config import get_server_host, set_server
 from client.connection import AgentConfig, connect_to_server
-from common.logger import info
+from common.logger import error, info
 
 
 def main():
     args = parse_arguments()
+    if args.command == "config":
+        if args.config_command == "set-server":
+            set_server(args.server_host)
+            info(f"Server address saved: {args.server_host}")
+        return
+
+    server_host = args.server_host or get_server_host()
+    if not server_host:
+        error(
+            "Server IP is not configured. "
+            "Run: openport config set-server <server-ip>"
+        )
+        return
+
     config = AgentConfig(
-        server_host=args.server_host,
+        server_host=server_host,
         control_port=args.control_port,
         data_port=args.data_port,
         local_host=args.local_host,

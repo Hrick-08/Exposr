@@ -176,6 +176,41 @@ python -m pip install -e .
 
 The console command is provided by the `client.main:main` entry point. The editable installation means source changes are immediately used without reinstalling the package.
 
+## Configure the Relay Server
+
+The server address is blank when OpenPort is first installed. Before using
+`expose`, save the public IP address or hostname of the relay VM:
+
+```bash
+openport config set-server YOUR_SERVER_IP
+```
+
+For example:
+
+```bash
+openport config set-server 12.345.67.890
+```
+
+The value is saved in:
+
+```text
+~/.openport/config.json
+```
+
+If you run `openport expose 3000` before configuring the server, OpenPort
+stops and displays:
+
+```text
+[ERROR] Server IP is not configured. Run: openport config set-server <server-ip>
+```
+
+The `--server-host` option can be used to override the saved address for one
+run:
+
+```bash
+openport expose 3000 --server-host YOUR_SERVER_IP
+```
+
 ---
 
 # Windows PATH Setup
@@ -228,6 +263,10 @@ Optional connection settings can be supplied with:
 --data-port
 --local-host
 ```
+
+The saved server address is used when `--server-host` is omitted. The control
+port defaults to `9000`, the data port defaults to `9001`, and the local host
+defaults to `127.0.0.1`.
 
 ## Specify a Public Port
 
@@ -566,6 +605,9 @@ python -m pip install .
 
 # Development installation
 python -m pip install -e .
+
+# Configure the relay server once
+openport config set-server YOUR_SERVER_IP
 
 # Expose a local service using the default public port
 openport expose 3000
