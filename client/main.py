@@ -1,8 +1,8 @@
 import asyncio
 
-from client.cli import parse_arguments
 from client.config import get_agent_token, get_server_host, set_server
 from client.connection import AgentConfig, connect_to_server
+from common.cli import parse_arguments
 from common.logger import error, info
 
 
