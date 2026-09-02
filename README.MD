@@ -219,6 +219,15 @@ exposr server init-token PASTE_TOKEN_HERE
 This writes the token to the server's `~/.exposr/config.json` while preserving
 other configuration values.
 
+Start the relay server with:
+
+```bash
+exposr server start
+```
+
+The server must be initialized with `exposr server init-token` before it can
+start accepting authenticated agents.
+
 The value is saved in:
 
 ```text

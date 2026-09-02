@@ -35,6 +35,7 @@ def parse_arguments(argv=None):
         "init-token", help="Set the relay server agent token"
     )
     init_token_parser.add_argument("agent_token")
+    server_subparsers.add_parser("start", help="Start the Exposr relay server")
 
     parser.add_argument("--server-host", default=None)
     parser.add_argument("--control-port", type=int, default=9000)

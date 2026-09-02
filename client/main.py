@@ -9,7 +9,7 @@ from common.logger import error, info
 def main():
     args = parse_arguments()
     if args.command == "server":
-        from server.config import init_token
+        from server.config import get_agent_token, init_token
 
         if args.server_command == "init-token":
             if not args.agent_token.strip():
@@ -17,6 +17,17 @@ def main():
                 return
             init_token(args.agent_token)
             info("Agent token saved to ~/.exposr/config.json")
+        elif args.server_command == "start":
+            if not get_agent_token():
+                error("Server token is not configured. Run: exposr server init-token <token>")
+                return
+            from server.main import main as start_server
+
+            try:
+                asyncio.run(start_server())
+            except KeyboardInterrupt:
+                print()
+                info("Exposr server stopped")
         return
     if args.command == "config":
         if args.config_command == "set-server":
