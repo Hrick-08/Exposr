@@ -743,7 +743,6 @@ The relay server firewall or cloud security rules must allow inbound TCP traffic
 | `22` | TCP | SSH |
 | `9000` | TCP | OpenPort control channel |
 | `9001` | TCP | OpenPort data channel |
-| `25565` | TCP | Default public tunnel |
 | `20000–30000` | TCP | Dynamic public tunnel range |
 
 The `20000–30000` range is required because OpenPort dynamically listens on ports within this range.
