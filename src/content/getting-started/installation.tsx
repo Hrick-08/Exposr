@@ -25,7 +25,7 @@ export default function InstallationPage() {
         <li>Python 3.10 or later</li>
         <li>pip (Python package manager)</li>
         <li>An internet connection</li>
-        <li>A local TCP service to expose</li>
+        <li>A local TCP or UDP service to expose</li>
       </ul>
 
       <h2 id="install-from-source" className="text-xl font-semibold mt-10 mb-4">Install from source</h2>
@@ -66,7 +66,8 @@ where exposr`}</CodeBlock>
       <p className="text-muted-foreground mb-4 leading-relaxed">
         Run the following to verify Exposr is installed:
       </p>
-      <CodeBlock language="bash">{`exposr expose 3000`}</CodeBlock>
+      <CodeBlock language="bash">{`exposr tcp 3000 25565`}</CodeBlock>
+        <CodeBlock language="bash">{`exposr tcp 3000 25565`}</CodeBlock>
       <Callout type="note">
         If you haven&apos;t configured a server yet, Exposr will show an error asking you to run <code className="text-sm bg-code-bg px-1.5 py-0.5 rounded font-mono text-accent">exposr config set-server &lt;server-ip&gt;</code>. This is expected — see the Quick Start guide.
       </Callout>

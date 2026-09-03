@@ -35,7 +35,7 @@ export default function CurrentSecurityModelPage() {
 
       <h2 id="limitations" className="text-xl font-semibold mt-10 mb-4">Known limitations</h2>
       <ul className="list-disc list-inside space-y-2 text-muted-foreground mb-6">
-        <li>TCP only — no encryption</li>
+        <li>TCP and UDP traffic are unencrypted</li>
         <li>No TLS on any channel</li>
         <li>Data connections (port 9001) are not separately authenticated</li>
         <li>No domain or subdomain routing</li>

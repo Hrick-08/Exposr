@@ -26,7 +26,7 @@ export default function OwnRelayServerPage() {
         <li>Python 3.10+</li>
         <li>Linux server, VPS, or cloud VM (e.g., Azure, AWS, DigitalOcean)</li>
         <li>Public IP address</li>
-        <li>Open inbound TCP ports: 9000, 9001, 25565, and 20000–30000</li>
+        <li>Open inbound TCP ports 9000 and 9001, plus TCP and UDP ports 25565 and 20000–30000</li>
       </ul>
 
       <h2 id="install" className="text-xl font-semibold mt-10 mb-4">Install Exposr on the server</h2>
@@ -64,13 +64,18 @@ exposr server init-token PASTE_TOKEN_HERE`}</CodeBlock>
           <tbody className="text-muted-foreground">
             <tr className="border-b border-border/50">
               <td className="py-2 pr-4 font-mono text-accent">9000</td>
-              <td className="py-2 pr-4">TCP</td>
+              <td className="py-2 pr-4">TCP/UDP</td>
               <td className="py-2">Control channel</td>
             </tr>
             <tr className="border-b border-border/50">
               <td className="py-2 pr-4 font-mono text-accent">9001</td>
               <td className="py-2 pr-4">TCP</td>
               <td className="py-2">Data channel</td>
+            </tr>
+            <tr className="border-b border-border/50">
+              <td className="py-2 pr-4 font-mono text-accent">25565</td>
+              <td className="py-2 pr-4">TCP/UDP</td>
+              <td className="py-2">Default public tunnel port</td>
             </tr>
             <tr className="border-b border-border/50">
               <td className="py-2 pr-4 font-mono text-accent">20000–30000</td>
@@ -88,7 +93,7 @@ exposr server init-token PASTE_TOKEN_HERE`}</CodeBlock>
       <p className="text-muted-foreground mb-4 leading-relaxed">
         From your local machine:
       </p>
-      <CodeBlock language="bash">{`exposr expose 3000`}</CodeBlock>
+      <CodeBlock language="bash">{`exposr tcp 3000 25565`}</CodeBlock>
     </div>
   );
 }

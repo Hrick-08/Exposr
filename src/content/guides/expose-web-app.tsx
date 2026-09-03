@@ -37,7 +37,7 @@ export default function ExposeWebAppPage() {
       <CodeBlock language="bash">{`node server.js  # listening on port 3000`}</CodeBlock>
 
       <h2 id="expose" className="text-xl font-semibold mt-10 mb-4">Expose it</h2>
-      <CodeBlock language="bash">{`exposr expose 3000`}</CodeBlock>
+      <CodeBlock language="bash">{`exposr tcp 3000 25565`}</CodeBlock>
       <Terminal title="exposr">{`[TRYING] Connecting to Exposr server
 [CONNECTED] Connected to Exposr control server
 [TRYING] Registering public port

@@ -29,14 +29,14 @@ export default function PortAssignmentPage() {
         <li>If not, try another random port (up to 100 attempts)</li>
       </ol>
       <CodeBlock language="bash">{`# Automatic port assignment
-exposr expose 3000`}</CodeBlock>
+exposr tcp 3000`}</CodeBlock>
 
       <h2 id="explicit" className="text-xl font-semibold mt-10 mb-4">Explicit assignment</h2>
       <p className="text-muted-foreground mb-4 leading-relaxed">
         You can request a specific public port with the <code className="text-sm bg-code-bg px-1.5 py-0.5 rounded font-mono text-accent">to</code> keyword. Exposr requests that exact port without fallback:
       </p>
       <CodeBlock language="bash">{`# Request specific public port 21342
-exposr expose 3000 to 21342`}</CodeBlock>
+exposr tcp 3000 21342`}</CodeBlock>
 
       <h2 id="algorithm" className="text-xl font-semibold mt-10 mb-4">Assignment algorithm</h2>
       <CodeBlock language="text">{`25565

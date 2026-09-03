@@ -32,12 +32,12 @@ export default function CLIOverviewPage() {
           </thead>
           <tbody className="text-muted-foreground">
             <tr className="border-b border-border/50">
-              <td className="py-2 pr-4 font-mono text-accent">exposr expose &lt;port&gt;</td>
+              <td className="py-2 pr-4 font-mono text-accent">exposr tcp &lt;local-port&gt; [public-port]</td>
               <td className="py-2">Expose a local TCP service through the relay</td>
             </tr>
             <tr className="border-b border-border/50">
-              <td className="py-2 pr-4 font-mono text-accent">exposr expose &lt;port&gt; to &lt;public-port&gt;</td>
-              <td className="py-2">Expose with a specific public port</td>
+              <td className="py-2 pr-4 font-mono text-accent">exposr udp &lt;local-port&gt; [public-port]</td>
+              <td className="py-2">Expose a local UDP service through the relay</td>
             </tr>
             <tr className="border-b border-border/50">
               <td className="py-2 pr-4 font-mono text-accent">exposr config set-server &lt;ip&gt;</td>
@@ -91,17 +91,20 @@ export default function CLIOverviewPage() {
       </div>
 
       <h2 id="examples" className="text-xl font-semibold mt-10 mb-4">Examples</h2>
-      <CodeBlock language="bash">{`# Expose a local service on the default public port
-exposr expose 3000
+        <CodeBlock language="bash">{`# Expose a local TCP service on the default public port
+exposr tcp 3000
 
-# Expose with a specific public port
-exposr expose 3000 to 21342
+# Expose a local TCP service with a specific public port
+exposr tcp 3000 21342
+
+# Expose a local UDP service
+exposr udp 3000 21342
 
 # Use a different server for one run
-exposr expose 3000 --server-host 10.0.0.5
+exposr tcp 3000 --server-host 10.0.0.5
 
 # Expose a service on port 8080
-exposr expose 8080`}</CodeBlock>
+exposr tcp 8080`}</CodeBlock>
     </div>
   );
 }

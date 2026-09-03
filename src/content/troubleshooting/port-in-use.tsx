@@ -23,8 +23,8 @@ export default function PortInUsePage() {
       </p>
       <p className="text-sm font-medium text-foreground mb-2">How to fix:</p>
       <ul className="list-disc list-inside space-y-1 text-muted-foreground mb-6">
-        <li>Let Exposr use automatic port assignment (omit the <code className="text-sm bg-code-bg px-1.5 py-0.5 rounded font-mono text-accent">to</code> parameter)</li>
-        <li>Choose a different public port: <code className="text-sm bg-code-bg px-1.5 py-0.5 rounded font-mono text-accent">exposr expose 3000 to 28000</code></li>
+        <li>Let Exposr use automatic port assignment (omit the optional public-port argument)</li>
+        <li>Choose a different public port: <code className="text-sm bg-code-bg px-1.5 py-0.5 rounded font-mono text-accent">exposr tcp 3000 28000</code></li>
       </ul>
 
       <h2 id="local-port" className="text-xl font-semibold mt-10 mb-4">Local port not listening</h2>

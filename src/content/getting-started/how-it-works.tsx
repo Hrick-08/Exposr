@@ -1,5 +1,4 @@
 import { CodeBlock } from '@/components/docs/code-block';
-import { Callout } from '@/components/docs/callout';
 
 export const meta = {
   title: 'How Exposr Works',
@@ -22,7 +21,7 @@ export default function HowItWorksPage() {
 
       <h2 id="overview" className="text-xl font-semibold mt-10 mb-4">Overview</h2>
       <p className="text-muted-foreground mb-4 leading-relaxed">
-        Exposr uses a relay server architecture. The client (agent) initiates an outbound TCP connection to the server. This is important because it means the client doesn't need any inbound ports open — it works behind NAT and firewalls.
+        Exposr uses a relay server architecture. The client (agent) initiates an outbound TCP connection to the server. This is important because it means the client doesn&apos;t need any inbound ports open — it works behind NAT and firewalls.
       </p>
       <p className="text-muted-foreground mb-6 leading-relaxed">
         The relay server has two internal ports: a control port (<code className="text-sm bg-code-bg px-1.5 py-0.5 rounded font-mono text-accent">9000</code>) for managing tunnels, and a data port (<code className="text-sm bg-code-bg px-1.5 py-0.5 rounded font-mono text-accent">9001</code>) for forwarding traffic.
@@ -30,7 +29,7 @@ export default function HowItWorksPage() {
 
       <h2 id="connection-flow" className="text-xl font-semibold mt-10 mb-4">Connection flow</h2>
       <p className="text-muted-foreground mb-4 leading-relaxed">
-        Here is the step-by-step flow when you run <code className="text-sm bg-code-bg px-1.5 py-0.5 rounded font-mono text-accent">exposr expose 3000</code>:
+        Here is the step-by-step flow when you run <code className="text-sm bg-code-bg px-1.5 py-0.5 rounded font-mono text-accent">exposr tcp 3000</code> (UDP uses the same registration flow with datagram forwarding):
       </p>
 
       <div className="space-y-4 mb-6">
@@ -99,10 +98,10 @@ export default function HowItWorksPage() {
         When a public port is explicitly specified with the <code className="text-sm bg-code-bg px-1.5 py-0.5 rounded font-mono text-accent">to</code> keyword, Exposr requests that exact port and does not fall back.
       </p>
       <CodeBlock language="bash">{`# Default port assignment
-exposr expose 3000
+exposr tcp 3000
 
 # Explicit port
-exposr expose 3000 to 21342`}</CodeBlock>
+exposr tcp 3000 21342`}</CodeBlock>
 
       <h2 id="data-forwarding" className="text-xl font-semibold mt-10 mb-4">Data forwarding</h2>
       <p className="text-muted-foreground mb-4 leading-relaxed">

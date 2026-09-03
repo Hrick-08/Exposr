@@ -43,9 +43,9 @@ export default function ProtocolReferencePage() {
               <td className="py-2">Authentication token (sent on connect)</td>
             </tr>
             <tr className="border-b border-border/50">
-              <td className="py-2 pr-4 font-mono text-accent">REGISTER &lt;port&gt;</td>
+              <td className="py-2 pr-4 font-mono text-accent">REGISTER &lt;port&gt; [&lt;token&gt; UDP]</td>
               <td className="py-2 pr-4">Agent → Server</td>
-              <td className="py-2">Request a public port for the tunnel</td>
+              <td className="py-2">Request a TCP or UDP public port</td>
             </tr>
             <tr className="border-b border-border/50">
               <td className="py-2 pr-4 font-mono text-accent">CONNECT &lt;uuid&gt;</td>
@@ -79,7 +79,7 @@ export default function ProtocolReferencePage() {
         </table>
       </div>
       <p className="text-muted-foreground mb-4 leading-relaxed">
-        After the identification message, the connection becomes a raw TCP pipe. All subsequent bytes are forwarded directly between the public client and the local service.
+        After the identification message, TCP connections become raw pipes. UDP payloads are transported as length-prefixed frames over the TCP data connection and are sent to the local UDP service as datagrams.
       </p>
 
       <h2 id="ports" className="text-xl font-semibold mt-10 mb-4">Default ports</h2>

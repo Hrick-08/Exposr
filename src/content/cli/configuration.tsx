@@ -20,7 +20,7 @@ export default function ConfigurationPage() {
 
       <h2 id="set-server" className="text-xl font-semibold mt-10 mb-4">Set server address</h2>
       <p className="text-muted-foreground mb-4 leading-relaxed">
-        Before using <code className="text-sm bg-code-bg px-1.5 py-0.5 rounded font-mono text-accent">exposr expose</code>, you must configure the relay server address:
+        Before using <code className="text-sm bg-code-bg px-1.5 py-0.5 rounded font-mono text-accent">exposr tcp</code> or <code className="text-sm bg-code-bg px-1.5 py-0.5 rounded font-mono text-accent">exposr udp</code>, you must configure the relay server address:
       </p>
       <CodeBlock language="bash">{`exposr config set-server YOUR_SERVER_IP`}</CodeBlock>
       <p className="text-muted-foreground mt-4 mb-4 leading-relaxed">

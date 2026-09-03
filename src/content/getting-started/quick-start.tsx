@@ -32,17 +32,18 @@ python -m pip install .`}</CodeBlock>
       </p>
       <CodeBlock language="bash">{`exposr config set-server YOUR_SERVER_IP`}</CodeBlock>
       <Callout type="note">
-        You need access to a machine running the Exposr server. See the "Using Your Own Relay Server" guide for setup instructions.
+        You need access to a machine running the Exposr server. See the &quot;Using Your Own Relay Server&quot; guide for setup instructions.
       </Callout>
 
       <h2 id="start-app" className="text-xl font-semibold mt-10 mb-4">3. Start your local application</h2>
       <p className="text-muted-foreground mb-4 leading-relaxed">
-        Start any TCP service on your local machine. For example, a Python HTTP server:
+        Start a local service. For example, a Python HTTP server:
       </p>
       <CodeBlock language="bash">{`python -m http.server 3000`}</CodeBlock>
 
       <h2 id="expose" className="text-xl font-semibold mt-10 mb-4">4. Expose it</h2>
-      <CodeBlock language="bash">{`exposr expose 3000`}</CodeBlock>
+      <CodeBlock language="bash">{`exposr tcp 3000 25565`}</CodeBlock>
+        <CodeBlock language="bash">{`exposr tcp 3000 25565`}</CodeBlock>
       <p className="text-muted-foreground mt-4 mb-4 leading-relaxed">
         You should see output similar to:
       </p>

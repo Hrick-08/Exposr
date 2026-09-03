@@ -6,7 +6,7 @@ export const meta = {
 };
 
 export const headings = [
-  { id: 'expose', text: 'exposr expose', level: 2 },
+  { id: 'expose', text: 'exposr tcp and udp', level: 2 },
   { id: 'config', text: 'exposr config', level: 2 },
   { id: 'server', text: 'exposr server', level: 2 },
 ];
@@ -17,12 +17,13 @@ export default function CLIReferencePage() {
       <h1 className="text-3xl font-bold mb-2">{meta.title}</h1>
       <p className="text-muted-foreground text-lg mb-8">{meta.description}</p>
 
-      <h2 id="expose" className="text-xl font-semibold mt-10 mb-4 font-mono">exposr expose</h2>
-      <CodeBlock language="text">{`exposr expose <local-port> [to <public-port>] [options]
+      <h2 id="expose" className="text-xl font-semibold mt-10 mb-4 font-mono">exposr tcp and udp</h2>
+      <CodeBlock language="text">{`exposr tcp <local-port> [public-port] [options]
+    exposr udp <local-port> [public-port] [options]
 
 Arguments:
   <local-port>              Local port to forward traffic to (required)
-  to <public-port>          Specific public port to request (optional)
+  [public-port]             Specific public port to request (optional)
 
 Options:
   --server-host <ip>        Override the relay server address
@@ -31,9 +32,10 @@ Options:
   --local-host <host>       Local host to forward to (default: 127.0.0.1)
 
 Examples:
-  exposr expose 3000
-  exposr expose 3000 to 21342
-  exposr expose 8080 --server-host 10.0.0.5`}</CodeBlock>
+  exposr tcp 3000
+  exposr tcp 3000 21342
+  exposr udp 3000 21342
+  exposr tcp 8080 --server-host 10.0.0.5`}</CodeBlock>
 
       <h2 id="config" className="text-xl font-semibold mt-10 mb-4 font-mono">exposr config</h2>
       <CodeBlock language="text">{`exposr config set-server <server-ip>

@@ -1,5 +1,4 @@
 import { CodeBlock } from '@/components/docs/code-block';
-import { Terminal } from '@/components/docs/terminal';
 
 export const meta = {
   title: 'Expose a FastAPI App',
@@ -35,7 +34,7 @@ def read_root():
       <CodeBlock language="bash">{`uvicorn main:app --host 127.0.0.1 --port 3000`}</CodeBlock>
 
       <h2 id="expose" className="text-xl font-semibold mt-10 mb-4">Expose it</h2>
-      <CodeBlock language="bash">{`exposr expose 3000`}</CodeBlock>
+      <CodeBlock language="bash">{`exposr tcp 3000 25565`}</CodeBlock>
 
       <h2 id="access-docs" className="text-xl font-semibold mt-10 mb-4">Access Swagger docs</h2>
       <p className="text-muted-foreground mb-4 leading-relaxed">

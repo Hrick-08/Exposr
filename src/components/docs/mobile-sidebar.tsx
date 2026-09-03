@@ -10,10 +10,6 @@ export function MobileSidebar({ open, onClose }: { open: boolean; onClose: () =>
   const pathname = usePathname();
 
   useEffect(() => {
-    onClose();
-  }, [pathname, onClose]);
-
-  useEffect(() => {
     if (open) {
       document.body.style.overflow = 'hidden';
     } else {
@@ -27,7 +23,7 @@ export function MobileSidebar({ open, onClose }: { open: boolean; onClose: () =>
   return (
     <div className="fixed inset-0 z-40 lg:hidden">
       <div className="fixed inset-0 bg-black/60" onClick={onClose} />
-      <div className="fixed inset-y-0 left-0 w-72 bg-background border-r border-border overflow-y-auto">
+      <div className="fixed inset-y-0 left-0 z-50 w-[min(18rem,calc(100vw-1rem))] max-w-full bg-background border-r border-border overflow-y-auto">
         <div className="p-4 pt-20">
           <nav className="space-y-1">
             {navigation.map((section) => (
@@ -41,6 +37,7 @@ export function MobileSidebar({ open, onClose }: { open: boolean; onClose: () =>
                       <li key={item.slug}>
                         <Link
                           href={href}
+                          onClick={onClose}
                           className={cn(
                             'block py-1 text-sm transition-colors',
                             active

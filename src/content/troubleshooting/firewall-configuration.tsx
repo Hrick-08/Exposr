@@ -45,8 +45,13 @@ export default function FirewallConfigurationPage() {
               <td className="py-2">Exposr data channel</td>
             </tr>
             <tr className="border-b border-border/50">
+              <td className="py-2 pr-4 font-mono text-accent">25565</td>
+              <td className="py-2 pr-4">TCP/UDP</td>
+              <td className="py-2">Default public tunnel port</td>
+            </tr>
+            <tr className="border-b border-border/50">
               <td className="py-2 pr-4 font-mono text-accent">20000–30000</td>
-              <td className="py-2 pr-4">TCP</td>
+              <td className="py-2 pr-4">TCP/UDP</td>
               <td className="py-2">Dynamic public tunnel ports</td>
             </tr>
           </tbody>
@@ -67,13 +72,19 @@ export default function FirewallConfigurationPage() {
       </p>
       <CodeBlock language="bash">{`sudo ufw allow 9000/tcp
 sudo ufw allow 9001/tcp
-sudo ufw allow 20000:30000/tcp`}</CodeBlock>
+sudo ufw allow 25565/tcp
+sudo ufw allow 25565/udp
+sudo ufw allow 20000:30000/tcp
+sudo ufw allow 20000:30000/udp`}</CodeBlock>
       <p className="text-muted-foreground mt-4 leading-relaxed">
         If using <code className="text-sm bg-code-bg px-1.5 py-0.5 rounded font-mono text-accent">iptables</code>:
       </p>
       <CodeBlock language="bash">{`sudo iptables -A INPUT -p tcp --dport 9000 -j ACCEPT
 sudo iptables -A INPUT -p tcp --dport 9001 -j ACCEPT
-sudo iptables -A INPUT -p tcp --dport 20000:30000 -j ACCEPT`}</CodeBlock>
+sudo iptables -A INPUT -p tcp --dport 25565 -j ACCEPT
+sudo iptables -A INPUT -p udp --dport 25565 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 20000:30000 -j ACCEPT
+sudo iptables -A INPUT -p udp --dport 20000:30000 -j ACCEPT`}</CodeBlock>
     </div>
   );
 }

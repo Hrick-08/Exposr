@@ -32,7 +32,7 @@ export function DocsHeader() {
   return (
     <>
       <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md">
-        <div className="flex h-14 items-center px-4 lg:px-6">
+        <div className="flex h-14 min-w-0 items-center px-4 lg:px-6">
           {/* Mobile menu button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -43,12 +43,12 @@ export function DocsHeader() {
           </button>
 
           {/* Logo */}
-          <Link href="/docs" className="flex items-center gap-2 mr-6">
+          <Link href="/docs" className="flex min-w-0 items-center gap-2 mr-3 sm:mr-6">
             <div className="flex items-center gap-1.5">
               <div className="h-6 w-6 rounded bg-accent flex items-center justify-center">
                 <span className="text-xs font-bold text-background">E</span>
               </div>
-              <span className="font-semibold text-foreground tracking-tight">Exposr</span>
+              <span className="truncate font-semibold text-foreground tracking-tight">Exposr</span>
             </div>
             <span className="hidden sm:inline text-xs text-muted-foreground border border-border rounded px-1.5 py-0.5">Docs</span>
           </Link>
@@ -61,7 +61,7 @@ export function DocsHeader() {
           </nav>
 
           {/* Right side */}
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex shrink-0 items-center gap-2">
             {/* Search button */}
             <button
               onClick={() => setSearchOpen(true)}

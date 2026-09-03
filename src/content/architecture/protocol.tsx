@@ -32,12 +32,13 @@ CONNECT <connection-uuid>`}</CodeBlock>
 
       <h2 id="data-protocol" className="text-xl font-semibold mt-10 mb-4">Data protocol</h2>
       <p className="text-muted-foreground mb-4 leading-relaxed">
-        The data protocol operates on port 9001. Each data connection begins with an identification message, after which the connection becomes a raw TCP pipe.
+        The data protocol operates on port 9001. Each data connection begins with an identification message. TCP tunnels then become raw TCP pipes; UDP tunnels use length-prefixed datagram frames over the TCP connection.
       </p>
       <CodeBlock language="text">{`# Agent identifies the data connection
 DATA <connection-uuid>
 
-# After identification, raw TCP data flows bidirectionally`}</CodeBlock>
+# After identification, raw TCP data flows bidirectionally
+# UDP payloads use length-prefixed frames`}</CodeBlock>
 
       <h2 id="message-reference" className="text-xl font-semibold mt-10 mb-4">Message reference</h2>
       <div className="overflow-x-auto">

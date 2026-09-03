@@ -4,7 +4,7 @@ import { ArchitectureDiagram } from '@/components/docs/architecture-diagram';
 
 export const meta = {
   title: 'Introduction',
-  description: 'Expose local services to the internet through a secure reverse tunnel.',
+  description: 'Expose local services to the internet through a reverse tunnel.',
 };
 
 export const headings = [
@@ -28,17 +28,17 @@ export default function IntroductionPage() {
       </Callout>
 
       <p className="text-muted-foreground mb-6 leading-relaxed">
-        Exposr is a reverse tunneling tool that allows developers to expose services running on their local machine through a publicly accessible relay server. It uses a persistent control connection and creates dedicated data tunnels for each incoming public connection.
+        Exposr is a reverse tunneling tool that allows developers to expose TCP and UDP services running on their local machine through a publicly accessible relay server. It uses a persistent control connection and creates dedicated data tunnels for each incoming public connection.
       </p>
 
       <h2 id="what-is-exposr" className="text-xl font-semibold mt-10 mb-4">What is Exposr?</h2>
       <p className="text-muted-foreground mb-4 leading-relaxed">
-        Exposr is a lightweight reverse TCP tunnel built with Python and asyncio. It lets you take a service running on <code className="text-sm bg-code-bg px-1.5 py-0.5 rounded font-mono text-accent">127.0.0.1</code> and make it accessible from the public internet through a relay server.
+        Exposr is a lightweight reverse TCP and UDP tunnel built with Python and asyncio. It lets you take a service running on <code className="text-sm bg-code-bg px-1.5 py-0.5 rounded font-mono text-accent">127.0.0.1</code> and make it accessible from the public internet through a relay server.
       </p>
       <p className="text-muted-foreground mb-4 leading-relaxed">
-        With a single command, your local web server, API, game server, or any TCP service becomes reachable at a public IP address and port.
+        With a single command, your local web server, API, game server, or UDP service becomes reachable at a public IP address and port.
       </p>
-      <CodeBlock language="bash">exposr expose 3000</CodeBlock>
+      <CodeBlock language="bash">exposr tcp 3000 25565</CodeBlock>
 
       <h2 id="how-it-works" className="text-xl font-semibold mt-10 mb-4">How it works</h2>
       <ol className="list-decimal list-inside space-y-2 text-muted-foreground mb-6">
@@ -68,6 +68,7 @@ export default function IntroductionPage() {
       </p>
       <ul className="list-disc list-inside space-y-1 text-muted-foreground mb-4">
         <li>Reverse TCP tunneling</li>
+        <li>Reverse UDP tunneling with datagram forwarding</li>
         <li>Dynamic public port registration with automatic fallback</li>
         <li>Agent token authentication on the control channel</li>
         <li>Multiple simultaneous public connections</li>
@@ -76,7 +77,7 @@ export default function IntroductionPage() {
         <li>Command-line interface</li>
       </ul>
       <Callout type="note">
-        Features like TLS encryption, UDP support, domain routing, and per-data-connection authentication are planned but not yet implemented. See the Security section for details.
+        Features like TLS encryption, domain routing, and per-data-connection authentication are planned but not yet implemented. See the Security section for details.
       </Callout>
     </div>
   );

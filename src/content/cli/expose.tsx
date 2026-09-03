@@ -3,8 +3,8 @@ import { Terminal } from '@/components/docs/terminal';
 import { Callout } from '@/components/docs/callout';
 
 export const meta = {
-  title: 'exposr expose',
-  description: 'Expose a local TCP service through an Exposr relay server.',
+  title: 'exposr tcp and udp',
+  description: 'Expose a local TCP or UDP service through an Exposr relay server.',
 };
 
 export const headings = [
@@ -24,7 +24,10 @@ export default function ExposePage() {
       <p className="text-muted-foreground text-lg mb-8">{meta.description}</p>
 
       <h2 id="usage" className="text-xl font-semibold mt-10 mb-4">Usage</h2>
-      <CodeBlock language="bash">{`exposr expose <local-port> [to <public-port>]`}</CodeBlock>
+      <CodeBlock language="bash">{`exposr tcp <local-port> [public-port]
+    exposr udp <local-port> [public-port]`}</CodeBlock>
+  <CodeBlock language="bash">{`exposr tcp <local-port> [public-port]
+exposr udp <local-port> [public-port]`}</CodeBlock>
 
       <h2 id="arguments" className="text-xl font-semibold mt-10 mb-4">Arguments</h2>
       <div className="overflow-x-auto">
@@ -41,9 +44,11 @@ export default function ExposePage() {
               <td className="py-2 pr-4 font-mono text-accent">&lt;local-port&gt;</td>
               <td className="py-2 pr-4">Yes</td>
               <td className="py-2">The local port to forward traffic to</td>
+                          <td className="py-2">The local TCP or UDP port to forward traffic to</td>
             </tr>
             <tr className="border-b border-border/50">
-              <td className="py-2 pr-4 font-mono text-accent">to &lt;public-port&gt;</td>
+              <td className="py-2 pr-4 font-mono text-accent">[public-port]</td>
+                            <td className="py-2 pr-4 font-mono text-accent">[public-port]</td>
               <td className="py-2 pr-4">No</td>
               <td className="py-2">Specific public port to request</td>
             </tr>
@@ -91,24 +96,29 @@ export default function ExposePage() {
         When no public port is specified, Exposr tries port <code className="text-sm bg-code-bg px-1.5 py-0.5 rounded font-mono text-accent">25565</code> first. If unavailable, it picks random ports from <code className="text-sm bg-code-bg px-1.5 py-0.5 rounded font-mono text-accent">20000-30000</code> and checks each with the server, up to 100 attempts.
       </p>
       <p className="text-muted-foreground mb-4 leading-relaxed">
-        When a public port is explicitly specified with <code className="text-sm bg-code-bg px-1.5 py-0.5 rounded font-mono text-accent">to</code>, Exposr requests that exact port without fallback.
+        When a public port is explicitly specified, Exposr requests that exact port without fallback. TCP and UDP tunnels use separate public sockets.
+        When a public port is explicitly specified, Exposr requests that exact port without fallback. TCP and UDP tunnels use separate public sockets.
       </p>
 
       <h2 id="examples" className="text-xl font-semibold mt-10 mb-4">Examples</h2>
       <CodeBlock language="bash">{`# Expose local port 3000 with automatic port assignment
-exposr expose 3000
+# Expose local TCP port 3000 with automatic port assignment
+exposr tcp 3000
 
-# Expose local port 3000 on public port 21342
-exposr expose 3000 to 21342
+# Expose local TCP port 3000 on public port 21342
+exposr tcp 3000 21342
+
+# Expose local UDP port 3000 on public port 21342
+exposr udp 3000 21342
 
 # Expose local port 8080
-exposr expose 8080
+exposr tcp 8080
 
 # Expose Minecraft server
-exposr expose 25565
+exposr tcp 25565
 
 # Override server address for one run
-exposr expose 3000 --server-host 10.0.0.5`}</CodeBlock>
+exposr tcp 3000 --server-host 10.0.0.5`}</CodeBlock>
 
       <h2 id="output" className="text-xl font-semibold mt-10 mb-4">Output</h2>
       <p className="text-muted-foreground mb-4 leading-relaxed">
@@ -132,6 +142,7 @@ Forwarding to:
       <CodeBlock language="text">{`[ERROR] Server IP is not configured. Run: exposr config set-server <server-ip>`}</CodeBlock>
       <Callout type="tip">
         Run <code className="text-sm bg-code-bg px-1.5 py-0.5 rounded font-mono text-accent">exposr config set-server YOUR_SERVER_IP</code> to save the server address before using <code className="text-sm bg-code-bg px-1.5 py-0.5 rounded font-mono text-accent">expose</code>.
+        Run <code className="text-sm bg-code-bg px-1.5 py-0.5 rounded font-mono text-accent">exposr config set-server YOUR_SERVER_IP</code> to save the server address before using <code className="text-sm bg-code-bg px-1.5 py-0.5 rounded font-mono text-accent">tcp</code> or <code className="text-sm bg-code-bg px-1.5 py-0.5 rounded font-mono text-accent">udp</code>.
       </Callout>
     </div>
   );

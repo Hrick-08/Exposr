@@ -22,7 +22,7 @@ export default function TlsAndHttpsPage() {
 
       <h2 id="current-state" className="text-xl font-semibold mt-10 mb-4">Current state</h2>
       <p className="text-muted-foreground mb-4 leading-relaxed">
-        Exposr v0.4 transmits all data as plain TCP. There is no TLS encryption on any channel:
+        Exposr v0.4 transmits tunnel traffic without encryption. The control and data channels use TCP, while public tunnels may use TCP or UDP:
       </p>
       <ul className="list-disc list-inside space-y-1 text-muted-foreground mb-6">
         <li>Control channel (port 9000) — unencrypted</li>

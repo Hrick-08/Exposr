@@ -2,7 +2,7 @@ import { Callout } from '@/components/docs/callout';
 
 export const meta = {
   title: 'Tunnels',
-  description: 'Understanding TCP tunnels in Exposr.',
+  description: 'Understanding TCP and UDP tunnels in Exposr.',
 };
 
 export const headings = [
@@ -19,7 +19,7 @@ export default function TunnelsPage() {
 
       <h2 id="what-is-a-tunnel" className="text-xl font-semibold mt-10 mb-4">What is a tunnel?</h2>
       <p className="text-muted-foreground mb-4 leading-relaxed">
-        In Exposr, a tunnel is a logical connection between a public port on the relay server and a local service on the client machine. When a tunnel is active, any TCP traffic arriving at the public port is forwarded to the local service through the relay server and the Exposr agent.
+        In Exposr, a tunnel is a logical connection between a public port on the relay server and a local service on the client machine. TCP tunnels forward stream traffic, while UDP tunnels forward datagrams through the relay server and Exposr agent.
       </p>
       <p className="text-muted-foreground mb-4 leading-relaxed">
         A tunnel consists of two parts: a persistent control connection that manages the tunnel lifecycle, and one or more data connections that carry the actual traffic.
@@ -39,10 +39,10 @@ export default function TunnelsPage() {
 
       <h2 id="limitations" className="text-xl font-semibold mt-10 mb-4">Current limitations</h2>
       <Callout type="experimental">
-        Exposr v0.4 only supports TCP tunnels. UDP, HTTPS termination, and domain-based routing are planned features.
+        Exposr v0.4 supports TCP and UDP tunnels. HTTPS termination and domain-based routing are planned features.
       </Callout>
       <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-        <li>TCP only — no UDP forwarding</li>
+        <li>UDP payloads use temporary TCP data connections and length-prefixed frames</li>
         <li>One tunnel per agent (one public port per control connection)</li>
         <li>No persistent tunnel configuration — tunnels exist only while the agent is connected</li>
         <li>No connection keep-alive or pooling for data connections</li>

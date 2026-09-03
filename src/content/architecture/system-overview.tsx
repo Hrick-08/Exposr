@@ -1,4 +1,3 @@
-import { Callout } from '@/components/docs/callout';
 import { ArchitectureDiagram } from '@/components/docs/architecture-diagram';
 
 export const meta = {
@@ -33,10 +32,10 @@ export default function SystemOverviewPage() {
 
       <h2 id="communication" className="text-xl font-semibold mt-10 mb-4">Communication</h2>
       <p className="text-muted-foreground mb-4 leading-relaxed">
-        All communication is TCP-based. The agent initiates all connections outbound, meaning it works behind NAT and firewalls without requiring inbound ports on the client machine.
+        The agent initiates all control and data connections outbound, meaning it works behind NAT and firewalls without requiring inbound ports on the client machine. Public TCP and UDP listeners run on the relay server.
       </p>
       <p className="text-muted-foreground mb-4 leading-relaxed">
-        The system uses a text-based protocol over the control channel and raw TCP forwarding over data connections.
+        The system uses a text-based protocol over the control channel. TCP tunnels forward stream data directly, while UDP datagrams travel through the TCP data channel as length-prefixed frames.
       </p>
     </div>
   );
