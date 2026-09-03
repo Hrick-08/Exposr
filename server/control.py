@@ -15,14 +15,26 @@ async def handle_agent(reader, writer):
     expected_token = get_agent_token()
     first_command = await reader.readline()
     first_parts = first_command.decode().strip().split()
-    if (
-        not first_command
-        or len(first_parts) not in (3, 4)
-        or first_parts[0] != REGISTER
-        or not expected_token
-        or not secrets.compare_digest(first_parts[2], expected_token)
-        or (len(first_parts) == 4 and first_parts[3] != UDP)
-    ):
+    valid_shape = (
+        bool(first_command)
+        and len(first_parts) in (3, 4)
+        and first_parts[0] == REGISTER
+        and (len(first_parts) == 3 or first_parts[3] == UDP)
+    )
+    valid_token = (
+        valid_shape
+        and bool(expected_token)
+        and secrets.compare_digest(first_parts[2], expected_token)
+    )
+    if not valid_shape:
+        error(f"Rejected agent with invalid registration: {first_command!r}")
+        writer.close()
+        try:
+            await writer.wait_closed()
+        except Exception:
+            pass
+        return
+    if not valid_token:
         error("Rejected agent with an invalid token")
         writer.close()
         try:
