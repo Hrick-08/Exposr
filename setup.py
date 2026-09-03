@@ -5,7 +5,7 @@ with open("README.md", encoding="utf-8") as f:
 
 setup(
     name="exposr",
-    version="0.5.0",
+    version="0.5.1",
     description="Expose local TCP and UDP services to the public internet",
 
     long_description=long_description,
