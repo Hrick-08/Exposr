@@ -2,11 +2,13 @@ import secrets
 import uuid
 
 from common.logger import connected, error
-from common.protocol import REGISTER
+from common.protocol import REGISTER, UDP
 from server.config import get_agent_token
 from server.ports import Agent, agents, unregister_agent
-from server.tcp.ports import register_tunnel
+from server.tcp.ports import register_tunnel as register_tcp_tunnel
 from server.tcp.tunnel import handle_public_client
+from server.udp.ports import register_tunnel as register_udp_tunnel
+from server.udp.tunnel import handle_public_client as handle_udp_client
 
 
 async def handle_agent(reader, writer):
@@ -15,10 +17,11 @@ async def handle_agent(reader, writer):
     first_parts = first_command.decode().strip().split()
     if (
         not first_command
-        or len(first_parts) != 3
+        or len(first_parts) not in (3, 4)
         or first_parts[0] != REGISTER
         or not expected_token
         or not secrets.compare_digest(first_parts[2], expected_token)
+        or (len(first_parts) == 4 and first_parts[3] != UDP)
     ):
         error("Rejected agent with an invalid token")
         writer.close()
@@ -41,7 +44,7 @@ async def handle_agent(reader, writer):
             if not parts:
                 command = await reader.readline()
                 continue
-            if parts[0] == REGISTER and len(parts) == 3:
+            if parts[0] == REGISTER and len(parts) in (3, 4):
                 if (
                     not expected_token
                     or not secrets.compare_digest(parts[2], expected_token)
@@ -50,9 +53,12 @@ async def handle_agent(reader, writer):
                     break
                 try:
                     public_port = int(parts[1])
-                    success = await register_tunnel(
-                        agent, public_port, handle_public_client
-                    )
+                    is_udp = len(parts) == 4 and parts[3] == UDP
+                    if len(parts) == 4 and not is_udp:
+                        raise ValueError("invalid transport")
+                    register = register_udp_tunnel if is_udp else register_tcp_tunnel
+                    handler = handle_udp_client if is_udp else handle_public_client
+                    success = await register(agent, public_port, handler)
                     if success:
                         writer.write(f"REGISTERED {public_port}\n".encode())
                     else:

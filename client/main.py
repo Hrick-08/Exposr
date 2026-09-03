@@ -1,7 +1,8 @@
 import asyncio
 
 from client.config import get_agent_token, get_server_host, set_server
-from client.tcp.connection import AgentConfig, connect_to_server
+from client.tcp.connection import AgentConfig as TcpAgentConfig, connect_to_server as connect_tcp
+from client.udp.connection import AgentConfig as UdpAgentConfig, connect_to_server as connect_udp
 from common.cli import parse_arguments
 from common.logger import error, info
 
@@ -36,10 +37,6 @@ def main():
             info(f"Server address saved: {args.server_host}")
             info("Agent token generated and saved to ~/.exposr/agent_token.txt")
         return
-    if args.command == "udp":
-        error("UDP tunneling is not implemented yet")
-        return
-
     server_host = args.server_host or get_server_host()
     agent_token = get_agent_token()
     if not server_host:
@@ -55,7 +52,9 @@ def main():
         )
         return
 
-    config = AgentConfig(
+    config_class = UdpAgentConfig if args.command == "udp" else TcpAgentConfig
+    connect = connect_udp if args.command == "udp" else connect_tcp
+    config = config_class(
         server_host=server_host,
         agent_token=agent_token,
         control_port=args.control_port,
@@ -66,7 +65,7 @@ def main():
         explicit_public_port=args.public_port is not None,
     )
     try:
-        asyncio.run(connect_to_server(config))
+        asyncio.run(connect(config))
     except KeyboardInterrupt:
         print()
         info("Exposr stopped")

@@ -18,6 +18,9 @@ async def unregister_agent(agent):
             error(f"Tunnel on port {port} removed")
             tunnel["server"].close()
             try:
-                await tunnel["server"].wait_closed()
+                wait_closed = tunnel["server"].wait_closed
+                result = wait_closed()
+                if hasattr(result, "__await__"):
+                    await result
             except Exception:
                 pass
