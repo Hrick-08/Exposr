@@ -1,7 +1,7 @@
 import asyncio
 
 from client.config import get_agent_token, get_server_host, set_server
-from client.connection import AgentConfig, connect_to_server
+from client.tcp.connection import AgentConfig, connect_to_server
 from common.cli import parse_arguments
 from common.logger import error, info
 
@@ -35,6 +35,9 @@ def main():
             set_server(args.server_host)
             info(f"Server address saved: {args.server_host}")
             info("Agent token generated and saved to ~/.exposr/agent_token.txt")
+        return
+    if args.command == "udp":
+        error("UDP tunneling is not implemented yet")
         return
 
     server_host = args.server_host or get_server_host()

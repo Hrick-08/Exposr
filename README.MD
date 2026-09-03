@@ -22,10 +22,7 @@ The project is built with Python and uses a public server as the relay. The agen
 - Reverse TCP tunneling
 - Localhost service exposure
 - Dynamic public port registration
-- Default preferred public port: `25565`
-- Automatic fallback to a random available port
-- Random fallback range: `20000-30000`
-- Port availability checking through server registration
+- TCP port availability checking through server registration
 - Persistent agent connection
 - Automatic agent reconnection
 - Multiple simultaneous public connections
@@ -35,16 +32,16 @@ The project is built with Python and uses a public server as the relay. The agen
 - Colored logs for connected, trying, error, and info events
 - Command-line interface
 
-Simple tunnel syntax:
+Simple TCP tunnel syntax:
 
 ```bash
-exposr expose 3000
+exposr tcp 3000 25565
 ```
 
-Optional public port:
+UDP is reserved as a command while UDP forwarding is being prepared:
 
-```bash
-exposr expose 3000 to 21342
+```text
+exposr udp <local-port> [public-port]
 ```
 
 ---
@@ -60,12 +57,10 @@ Suppose an application is running locally:
 Start Exposr:
 
 ```bash
-exposr expose 3000
+exposr tcp 3000 25565
 ```
 
 The agent creates an outbound connection to the Exposr relay server.
-
-By default, it attempts to register public port `25565`. If that port is already owned by another tunnel, Exposr selects a random port between `20000-30000`. Each random port is sent to the server for registration; a port is not assumed to be available merely because it was randomly selected.
 
 ```text
 Your PC
@@ -123,11 +118,14 @@ Exposr/
 |
 +-- client/
 |   +-- __init__.py
-|   +-- cli.py
 |   +-- config.py
-|   +-- connection.py
-|   +-- tunnel.py
 |   +-- main.py
+|   +-- tcp/
+|   |   +-- __init__.py
+|   |   +-- connection.py
+|   |   +-- tunnel.py
+|   +-- udp/
+|       +-- __init__.py
 |
 +-- common/
 |   +-- __init__.py
@@ -138,15 +136,23 @@ Exposr/
 |   +-- __init__.py
 |   +-- control.py
 |   +-- data.py
-|   +-- tunnel.py
 |   +-- ports.py
 |   +-- main.py
+|   +-- tcp/
+|   |   +-- __init__.py
+|   |   +-- ports.py
+|   |   +-- tunnel.py
+|   +-- udp/
+|       +-- __init__.py
 |
 +-- setup.py
 +-- README.MD
 ```
 
-The old monolithic `client/agent.py` and `server/server.py` files are no longer active implementations. Shared logging and protocol messages live in `common/`; client and server responsibilities are separated into their respective packages.
+TCP-specific client and server logic lives in the `tcp/` packages. The `udp/`
+packages are reserved for future UDP support. Shared client and server
+coordination stays in their respective top-level packages, while shared
+logging and protocol messages live in `common/`.
 
 ---
 
@@ -178,7 +184,7 @@ The console command is provided by the `client.main:main` entry point as `exposr
 ## Configure the Relay Server
 
 The server address is blank when Exposr is first installed. Before using
-`expose`, save the public IP address or hostname of the relay VM:
+`tcp` or `udp`, save the public IP address or hostname of the relay VM:
 
 ```bash
 exposr config set-server YOUR_SERVER_IP
@@ -234,7 +240,7 @@ The value is saved in:
 ~/.exposr/config.json
 ```
 
-If you run `exposr expose 3000` before configuring the server, Exposr
+If you run `exposr tcp 3000 25565` before configuring the server, Exposr
 stops and displays:
 
 ```text
@@ -245,7 +251,7 @@ The `--server-host` option can be used to override the saved address for one
 run:
 
 ```bash
-exposr expose 3000 --server-host YOUR_SERVER_IP
+exposr tcp 3000 25565 --server-host YOUR_SERVER_IP
 ```
 
 ---
@@ -275,7 +281,7 @@ where exposr
 After adding the correct directory to `PATH`, close existing terminals and open a new terminal. Verify with `where exposr`, then run:
 
 ```cmd
-exposr expose 3000
+exposr tcp 3000 25565
 ```
 
 ---
@@ -284,13 +290,15 @@ exposr expose 3000
 
 ## Basic Usage
 
-Expose a local service running on port `3000`:
+Expose a local TCP service running on port `3000` through public port `25565`:
 
 ```bash
-exposr expose 3000
+exposr tcp 3000 25565
 ```
 
-Exposr attempts to expose it on `SERVER_IP:25565`. If `25565` is unavailable, a random port between `20000` and `30000` is selected and checked with the server.
+Exposr requests the specified public port and reports an error if it is unavailable.
+When the public port is omitted, Exposr tries `25565` first and then selects
+random ports from `20000-30000` until it finds one that the server accepts.
 
 Optional connection settings can be supplied with:
 
@@ -305,12 +313,12 @@ The saved server address is used when `--server-host` is omitted. The control
 port defaults to `9000`, the data port defaults to `9001`, and the local host
 defaults to `127.0.0.1`.
 
-## Specify a Public Port
+## TCP Tunnels
 
-You can explicitly request a public port:
+The TCP command accepts an optional public port:
 
 ```bash
-exposr expose 3000 to 21342
+exposr tcp 3000 21342
 ```
 
 This forwards:
@@ -319,52 +327,53 @@ This forwards:
 127.0.0.1:3000  ->  SERVER_IP:21342
 ```
 
-The general syntax is:
+The syntax is:
 
 ```text
-exposr expose <local-port>
-exposr expose <local-port> to <public-port>
+exposr tcp <local-port> [public-port]
 ```
 
 Examples:
 
 ```bash
-exposr expose 3000
-exposr expose 8080
-exposr expose 5000 to 25000
-exposr expose 25565 to 25565
+exposr tcp 3000 25565
+exposr tcp 8080 28080
+exposr tcp 5000 25000
+exposr tcp 25565 25565
 ```
 
-When a public port is explicitly specified, Exposr requests that exact port and does not silently replace it with a random port.
+When a public port is supplied, Exposr requests that exact port and reports an
+error if it is unavailable. When omitted, it uses the fallback described above.
+
+## UDP Tunnels
+
+The UDP command is reserved for the upcoming UDP forwarding implementation. It
+uses the same optional public-port and fallback behavior as TCP, but currently
+reports that UDP tunneling is not yet implemented:
+
+```text
+exposr udp <local-port> [public-port]
+```
 
 ---
 
 # Port Assignment
 
-When no public port is specified, Exposr attempts `25565` first:
+For a TCP tunnel, Exposr requests the public port supplied on the command line:
 
 ```text
-25565
+requested public port
   |
   v
 available?
   |
   +-- yes -> register tunnel
   |
-  +-- no
-        |
-        v
-random port from 20000-30000
-        |
-        v
-available?
-  |
-  +-- yes -> register tunnel
-  |
-  +-- no -> try another random port
+  +-- no -> try another random port from 20000-30000
 ```
 
-The agent retries up to the existing maximum of 100 registration attempts. The server tracks ownership and releases public ports when an agent disconnects.
+When no public port is supplied, the agent tries `25565` first. The server
+tracks ownership and releases public ports when an agent disconnects.
 
 ---
 
@@ -374,8 +383,8 @@ The agent retries up to the existing maximum of 100 registration attempts. The s
 |---|---|
 | `9000` | Persistent agent control channel |
 | `9001` | Dedicated data tunnel connections |
-| `25565` | Default preferred public port |
-| `20000-30000` | Dynamic fallback public port range |
+| `25565` | Default preferred public TCP tunnel port |
+| `20000-30000` | Random fallback public TCP tunnel range |
 
 The relay host or Azure firewall must allow inbound TCP traffic for all of these ports and ranges.
 
@@ -471,7 +480,7 @@ uvicorn main:app --host 127.0.0.1 --port 3000
 Start Exposr:
 
 ```bash
-exposr expose 3000
+exposr tcp 3000 25565
 ```
 
 If Exposr assigns `25565`, visiting `http://SERVER_IP:25565` forwards traffic to `http://127.0.0.1:3000`. Swagger documentation is available through `http://SERVER_IP:25565/docs` when that public port is assigned.
@@ -535,9 +544,10 @@ The relay server firewall or cloud security rules must allow inbound TCP traffic
 | `22` | TCP | SSH, if required for administration |
 | `9000` | TCP | Exposr control channel |
 | `9001` | TCP | Exposr data channel |
-| `20000-30000` | TCP | Dynamic public tunnel range |
+| `<public-port>` | TCP | Public tunnel port requested by the agent |
 
-The `20000-30000` range is required because Exposr dynamically listens on ports within that range. Without allowing these ports through the cloud firewall or Network Security Group, Exposr may register a tunnel internally while external users cannot reach it.
+The requested public port must be allowed through the cloud firewall or Network
+Security Group, or external users cannot reach the tunnel.
 
 ---
 
@@ -736,23 +746,24 @@ python -m pip install -e .
 # Configure the relay server once
 exposr config set-server YOUR_SERVER_IP
 
-# Expose a local service using the default public port
-exposr expose 3000
+# Expose a local TCP service using the default public port
+exposr tcp 3000 25565
 
 # Expose a local service using a specific public port
-exposr expose 3000 to 21342
+exposr tcp 3000 21342
 
 # Expose another local service
-exposr expose 8080
+exposr tcp 8080 28080
 
 # Expose a Minecraft Java server on its default local port
-exposr expose 25565
+exposr tcp 25565 25565
 ```
 
-The general syntax is:
+The general TCP syntax is:
 
 ```text
-exposr expose <local-port> to <public-port>
+exposr tcp <local-port> [public-port]
 ```
 
-If `<public-port>` is omitted, Exposr tries `25565` first and then falls back to a random available port between `20000` and `30000`.
+UDP is reserved with the parallel syntax `exposr udp <local-port> [public-port]`,
+but UDP forwarding is not implemented yet.

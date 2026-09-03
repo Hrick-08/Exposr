@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from common.logger import connected, error, trying
 from common.protocol import CONNECT, REGISTER, REGISTERED, command
-from client.tunnel import handle_connection
+from client.tcp.tunnel import handle_connection
 
 RANDOM_PORT_START = 20000
 RANDOM_PORT_END = 30000

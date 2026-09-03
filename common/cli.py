@@ -4,21 +4,35 @@ import argparse
 def parse_arguments(argv=None):
     parser = argparse.ArgumentParser(
         prog="exposr",
-        description="Exposr TCP tunneling agent",
+        description="Exposr TCP and UDP tunneling agent",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
-    expose_parser = subparsers.add_parser(
-        "expose", help="Expose a local port to the internet"
-    )
-    expose_parser.add_argument("local_port", type=int)
-    expose_parser.add_argument("to", nargs="?", default=None)
-    expose_parser.add_argument("public_port", nargs="?", type=int, default=None)
 
-    # Accept configuration flags both before and after the subcommand.
-    expose_parser.add_argument("--server-host", dest="server_host", default=argparse.SUPPRESS)
-    expose_parser.add_argument("--control-port", dest="control_port", type=int, default=argparse.SUPPRESS)
-    expose_parser.add_argument("--data-port", dest="data_port", type=int, default=argparse.SUPPRESS)
-    expose_parser.add_argument("--local-host", dest="local_host", default=argparse.SUPPRESS)
+    def add_tunnel_arguments(tunnel_parser):
+        tunnel_parser.add_argument("local_port", type=int)
+        tunnel_parser.add_argument(
+            "public_port",
+            nargs="?",
+            type=int,
+            default=None,
+        )
+
+        # Accept configuration flags both before and after the subcommand.
+        tunnel_parser.add_argument("--server-host", dest="server_host", default=argparse.SUPPRESS)
+        tunnel_parser.add_argument("--control-port", dest="control_port", type=int, default=argparse.SUPPRESS)
+        tunnel_parser.add_argument("--data-port", dest="data_port", type=int, default=argparse.SUPPRESS)
+        tunnel_parser.add_argument("--local-host", dest="local_host", default=argparse.SUPPRESS)
+
+    tcp_parser = subparsers.add_parser(
+        "tcp", help="Expose a local TCP port to the internet"
+    )
+    add_tunnel_arguments(tcp_parser)
+
+    udp_parser = subparsers.add_parser(
+        "udp", help="Expose a local UDP port to the internet"
+    )
+    add_tunnel_arguments(udp_parser)
+
 
     config_parser = subparsers.add_parser("config", help="Manage Exposr configuration")
     config_subparsers = config_parser.add_subparsers(dest="config_command", required=True)
@@ -43,9 +57,4 @@ def parse_arguments(argv=None):
     parser.add_argument("--local-host", default="127.0.0.1")
 
     args = parser.parse_args(argv)
-    if args.command == "expose":
-        if args.to is not None and args.to != "to":
-            parser.error("Expected syntax: exposr expose <local-port> to <public-port>")
-        if args.to == "to" and args.public_port is None:
-            parser.error("Please specify a public port after 'to'")
     return args

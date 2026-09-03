@@ -4,8 +4,9 @@ import uuid
 from common.logger import connected, error
 from common.protocol import REGISTER
 from server.config import get_agent_token
-from server.ports import Agent, agents, register_tunnel, unregister_agent
-from server.tunnel import handle_public_client
+from server.ports import Agent, agents, unregister_agent
+from server.tcp.ports import register_tunnel
+from server.tcp.tunnel import handle_public_client
 
 
 async def handle_agent(reader, writer):
