@@ -24,7 +24,7 @@ export default function IntroductionPage() {
       </p>
 
       <Callout type="experimental">
-        Exposr v0.4 is currently an experimental proof of concept. The core tunneling functionality works, but some features like TLS encryption and per-connection authentication are not yet implemented.
+        Exposr v0.5 is currently an experimental proof of concept. The core tunneling functionality works, but some features like TLS encryption and per-connection authentication are not yet implemented.
       </Callout>
 
       <p className="text-muted-foreground mb-6 leading-relaxed">
@@ -64,7 +64,7 @@ export default function IntroductionPage() {
 
       <h2 id="current-status" className="text-xl font-semibold mt-10 mb-4">Current status</h2>
       <p className="text-muted-foreground mb-4 leading-relaxed">
-        Exposr v0.4 supports:
+        Exposr v0.5 supports:
       </p>
       <ul className="list-disc list-inside space-y-1 text-muted-foreground mb-4">
         <li>Reverse TCP tunneling</li>

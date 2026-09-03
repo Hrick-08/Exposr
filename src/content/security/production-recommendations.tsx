@@ -17,7 +17,7 @@ export default function ProductionRecommendationsPage() {
       <p className="text-muted-foreground text-lg mb-8">{meta.description}</p>
 
       <Callout type="caution">
-        Exposr v0.4 is not production-ready. Use it for development and testing only.
+        Exposr v0.5 is not production-ready. Use it for development and testing only.
       </Callout>
 
       <h2 id="overview" className="text-xl font-semibold mt-10 mb-4">Overview</h2>

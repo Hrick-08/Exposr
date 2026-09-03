@@ -39,7 +39,7 @@ export default function TunnelsPage() {
 
       <h2 id="limitations" className="text-xl font-semibold mt-10 mb-4">Current limitations</h2>
       <Callout type="experimental">
-        Exposr v0.4 supports TCP and UDP tunnels. HTTPS termination and domain-based routing are planned features.
+        Exposr v0.5 supports TCP and UDP tunnels. HTTPS termination and domain-based routing are planned features.
       </Callout>
       <ul className="list-disc list-inside space-y-1 text-muted-foreground">
         <li>UDP payloads use temporary TCP data connections and length-prefixed frames</li>

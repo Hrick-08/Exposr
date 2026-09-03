@@ -19,7 +19,7 @@ export default function EnvironmentVariablesPage() {
 
       <h2 id="current-support" className="text-xl font-semibold mt-10 mb-4">Current support</h2>
       <p className="text-muted-foreground mb-4 leading-relaxed">
-        Exposr v0.4 primarily uses file-based configuration (<code className="text-sm bg-code-bg px-1.5 py-0.5 rounded font-mono text-accent">~/.exposr/config.json</code>) and CLI flags. Environment variable support is minimal in the current version.
+        Exposr v0.5 primarily uses file-based configuration (<code className="text-sm bg-code-bg px-1.5 py-0.5 rounded font-mono text-accent">~/.exposr/config.json</code>) and CLI flags. Environment variable support is minimal in the current version.
       </p>
       <p className="text-muted-foreground mb-4 leading-relaxed">
         Configuration is managed through:

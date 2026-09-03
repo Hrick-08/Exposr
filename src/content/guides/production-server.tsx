@@ -19,7 +19,7 @@ export default function ProductionServerPage() {
       <p className="text-muted-foreground text-lg mb-8">{meta.description}</p>
 
       <Callout type="caution">
-        Exposr v0.4 is experimental and not production-ready. Use it for development and testing only. See the Security section for current limitations.
+        Exposr v0.5 is experimental and not production-ready. Use it for development and testing only. See the Security section for current limitations.
       </Callout>
 
       <h2 id="current-status" className="text-xl font-semibold mt-10 mb-4">Current status</h2>
