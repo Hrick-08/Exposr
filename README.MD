@@ -16,7 +16,7 @@ The project is built with Python and uses a public server as the relay. The agen
 
 ## Current Version
 
-**Exposr v0.4 - Experimental / Proof of Concept**
+**Exposr v0.5 - Experimental / Proof of Concept**
 
 ### Current capabilities
 
