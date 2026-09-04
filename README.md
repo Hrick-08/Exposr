@@ -16,7 +16,7 @@ The project is built with Python and uses a public server as the relay. The agen
 
 ## Current Version
 
-**Exposr v0.5.2 - Experimental / Proof of Concept**
+**Exposr v0.5.4 - Experimental / Proof of Concept**
 
 ### Current capabilities
 
@@ -68,6 +68,23 @@ UDP tunnels use the same control connection and public-port selection as TCP.
 The public UDP listener forwards each datagram to the local UDP service. UDP
 payloads travel through the existing TCP data channel using length-prefixed
 frames, then are sent back as UDP datagrams.
+
+```text
+Internet UDP Client
+  |
+  | UDP
+  v
+Exposr Server : Public UDP Port
+  |
+  | TCP data connection
+  | UDP datagrams encoded as length-prefixed frames
+  v
+Exposr Client
+  |
+  | UDP
+  v
+Local UDP Service
+```
 
 ```text
 Your PC
@@ -374,9 +391,12 @@ exposr udp 5000 25000
 ```
 
 With no public port, Exposr tries `25565`, then random ports from `20000-30000`.
-With a public port, it requests that exact port. Each incoming public datagram
-gets a temporary tunnel session to the local UDP service, and responses are
-returned to the original sender.
+With a public port, Exposr requests that exact port.
+
+Incoming UDP traffic is grouped into sessions based on the public client's
+source address. A tunnel is established for a new UDP client session and
+subsequent datagrams from that client reuse the same tunnel. Responses from
+the local UDP service are forwarded back to the original sender.
 
 ---
 
@@ -754,7 +774,8 @@ Known limitations:
 - No rate limiting or abuse protection
 - Public port ranges must be explicitly allowed by the server firewall
 - Random port allocation does not bypass firewall or cloud security rules
-- UDP forwarding uses temporary TCP data connections for payload transport
+- UDP traffic uses UDP at the public and local endpoints, but UDP payloads are currently transported through TCP data connections between the Exposr server and client
+- UDP sessions are maintained per public client source address and do not yet have configurable idle timeout handling
 
 ---
 
@@ -787,7 +808,7 @@ These are not part of the current protocol or implementation.
 # Development Status
 
 ```text
-Exposr v0.5.2
+Exposr v0.5.4
 Experimental / Proof of Concept
 ```
 
