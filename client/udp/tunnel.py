@@ -22,7 +22,14 @@ class LocalUdpProtocol(asyncio.DatagramProtocol):
         self.queue = queue
 
     def datagram_received(self, data, address):
+        print(
+            f"[UDP] Response from local server: "
+            f"{len(data)} bytes from {address}"
+        )
         self.queue.put_nowait(data)
+
+    def error_received(self, exc):
+        print(f"[UDP] Local UDP error: {exc}")
 
 
 async def handle_connection(connection_id, config):
@@ -47,12 +54,25 @@ async def handle_connection(connection_id, config):
         async def send_local_datagrams():
             while True:
                 data = await queue.get()
+
+                print(
+                    f"[UDP] Sending response through tunnel: "
+                    f"{len(data)} bytes"
+                )
+
                 data_writer.write(pack_datagram(data))
                 await data_writer.drain()
 
         async def receive_local_datagrams():
             while True:
-                local_transport.sendto(await read_datagram(data_reader))
+                data = await read_datagram(data_reader)
+
+                print(
+                    f"[UDP] Packet from Exposr server: "
+                    f"{len(data)} bytes"
+                )
+
+                local_transport.sendto(data)
 
         await asyncio.gather(send_local_datagrams(), receive_local_datagrams())
     except Exception as exc:
