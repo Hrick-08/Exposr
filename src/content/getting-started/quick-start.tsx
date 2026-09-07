@@ -22,9 +22,7 @@ export default function QuickStartPage() {
       <p className="text-muted-foreground text-lg mb-8">{meta.description}</p>
 
       <h2 id="install" className="text-xl font-semibold mt-10 mb-4">1. Install Exposr</h2>
-      <CodeBlock language="bash">{`git clone https://github.com/Hrick-08/Exposr.git
-cd Exposr
-python -m pip install .`}</CodeBlock>
+      <CodeBlock language="bash">{`pip install exposr`}</CodeBlock>
 
       <h2 id="configure" className="text-xl font-semibold mt-10 mb-4">2. Configure the relay server</h2>
       <p className="text-muted-foreground mb-4 leading-relaxed">
@@ -43,7 +41,6 @@ python -m pip install .`}</CodeBlock>
 
       <h2 id="expose" className="text-xl font-semibold mt-10 mb-4">4. Expose it</h2>
       <CodeBlock language="bash">{`exposr tcp 3000 25565`}</CodeBlock>
-        <CodeBlock language="bash">{`exposr tcp 3000 25565`}</CodeBlock>
       <p className="text-muted-foreground mt-4 mb-4 leading-relaxed">
         You should see output similar to:
       </p>

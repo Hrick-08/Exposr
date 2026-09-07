@@ -8,7 +8,7 @@ export const meta = {
 
 export const headings = [
   { id: 'requirements', text: 'Requirements', level: 2 },
-  { id: 'install-from-source', text: 'Install from source', level: 2 },
+  { id: 'install-from-pypi', text: 'Install from PyPI', level: 2 },
   { id: 'development-install', text: 'Development installation', level: 2 },
   { id: 'windows-path', text: 'Windows PATH setup', level: 2 },
   { id: 'verify', text: 'Verify installation', level: 2 },
@@ -28,15 +28,13 @@ export default function InstallationPage() {
         <li>A local TCP or UDP service to expose</li>
       </ul>
 
-      <h2 id="install-from-source" className="text-xl font-semibold mt-10 mb-4">Install from source</h2>
+      <h2 id="install-from-pypi" className="text-xl font-semibold mt-10 mb-4">Install from PyPI</h2>
       <p className="text-muted-foreground mb-4 leading-relaxed">
-        Clone the repository and install the package:
+        Install the latest release of Exposr with pip:
       </p>
-      <CodeBlock language="bash">{`git clone https://github.com/Hrick-08/Exposr.git
-cd Exposr
-python -m pip install .`}</CodeBlock>
+      <CodeBlock language="bash">{`pip install exposr`}</CodeBlock>
       <p className="text-muted-foreground mt-4 leading-relaxed">
-        This installs the <code className="text-sm bg-code-bg px-1.5 py-0.5 rounded font-mono text-accent">exposr</code> command globally via the <code className="text-sm bg-code-bg px-1.5 py-0.5 rounded font-mono text-accent">client.main:main</code> entry point.
+        This installs the <code className="text-sm bg-code-bg px-1.5 py-0.5 rounded font-mono text-accent">exposr</code> command.
       </p>
 
       <h2 id="development-install" className="text-xl font-semibold mt-10 mb-4">Development installation</h2>
@@ -67,7 +65,6 @@ where exposr`}</CodeBlock>
         Run the following to verify Exposr is installed:
       </p>
       <CodeBlock language="bash">{`exposr tcp 3000 25565`}</CodeBlock>
-        <CodeBlock language="bash">{`exposr tcp 3000 25565`}</CodeBlock>
       <Callout type="note">
         If you haven&apos;t configured a server yet, Exposr will show an error asking you to run <code className="text-sm bg-code-bg px-1.5 py-0.5 rounded font-mono text-accent">exposr config set-server &lt;server-ip&gt;</code>. This is expected — see the Quick Start guide.
       </Callout>
