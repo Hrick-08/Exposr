@@ -41,7 +41,9 @@ export default function InstallationPage() {
       <p className="text-muted-foreground mb-4 leading-relaxed">
         For development, use an editable installation so source changes take effect immediately:
       </p>
-      <CodeBlock language="bash">{`python -m pip install -e .`}</CodeBlock>
+      <CodeBlock language="bash">
+        {`git clone https://github.com/Hrick-08/exposr.git\ncd exposr\npython -m pip install -e .`}
+      </CodeBlock>
 
       <h2 id="windows-path" className="text-xl font-semibold mt-10 mb-4">Windows PATH setup</h2>
       <p className="text-muted-foreground mb-4 leading-relaxed">
