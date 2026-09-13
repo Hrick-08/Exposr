@@ -8,6 +8,16 @@
 ```
 
 # Exposr
+### Reverse TCP & UDP Tunneling
+*Expose local services to the public internet through a lightweight, self-hosted relay server.*
+
+[![Python](https://img.shields.io/badge/Python-Backend-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
+[![Asyncio](https://img.shields.io/badge/Asyncio-Asynchronous%20Networking-3776AB?style=flat-square&logo=python&logoColor=white)](https://docs.python.org/3/library/asyncio.html)
+[![TCP](https://img.shields.io/badge/TCP-Tunneling-0078D4?style=flat-square)](https://en.wikipedia.org/wiki/Transmission_Control_Protocol)
+[![UDP](https://img.shields.io/badge/UDP-Tunneling-7B42BC?style=flat-square)](https://en.wikipedia.org/wiki/User_Datagram_Protocol)
+[![Ubuntu](https://img.shields.io/badge/Ubuntu-Relay%20Server-E95420?style=flat-square&logo=ubuntu&logoColor=white)](https://ubuntu.com)
+[![Azure](https://img.shields.io/badge/Azure-Cloud%20Relay-0078D4?style=flat-square&logo=microsoftazure&logoColor=white)](https://azure.microsoft.com)
+[![CLI](https://img.shields.io/badge/Interface-CLI-333333?style=flat-square&logo=gnubash&logoColor=white)](https://en.wikipedia.org/wiki/Command-line_interface)
 
 Exposr is a reverse TCP and UDP tunneling project that exposes services running
 on a user's local machine to the public internet through a remote relay server.
@@ -672,6 +682,82 @@ tunnels need UDP access. Ports `9000` and `9001` always use TCP.
 ---
 
 ---
+
+
+## Relay Server Performance Considerations
+
+The current Exposr relay server runs on a very entry-level Azure VM:
+
+| Specification | Value |
+|---|---|
+| Azure VM size | `Standard B1s` |
+| vCPU | 1 |
+| Memory | 1 GiB |
+| Operating system | Ubuntu 24.04 LTS |
+| Azure region | Central India |
+| OS disk | 30 GB |
+| VM type | Burstable, entry-level instance |
+
+Because the relay is running on a small, burstable VM with limited CPU and memory, performance results should be interpreted in that context. Under sustained traffic or multiple simultaneous connections, the relay may experience CPU-credit throttling, memory pressure, increased latency, or reduced throughput.
+
+The relay server is currently being used as a functional test environment rather than as a production-grade performance benchmark. Improvements in connection reuse, persistent tunnels, buffering, and resource usage should be evaluated separately from the limitations of the underlying VM.
+
+---
+
+## Testing: Minecraft LAN Game Through Exposr
+
+A Minecraft LAN game is being used as an end-to-end test of Exposr's TCP tunneling functionality.
+
+### Test setup
+
+1. **Hosting computer:** Runs the Minecraft game and opens it to LAN.
+2. **Exposr client:** Runs on the hosting computer and exposes the local Minecraft TCP port `25565` through the relay server:
+
+   ```bash
+   exposr tcp 25565 25565
+   ```
+
+3. **Relay server:** Receives traffic on its public IP and port `25565`, then forwards it through Exposr to the hosting computer's local Minecraft service.
+4. **Joining computer:** Connects to the Minecraft game using the relay server's public IP and port rather than connecting directly to the hosting computer.
+
+### Connection flow
+
+```text
+Minecraft Hosting Computer
+        |
+        | Minecraft LAN server
+        | 127.0.0.1:25565
+        v
+Exposr TCP Client
+        |
+        | Exposr tunnel
+        v
+Azure Relay Server
+        |
+        | Public TCP :25565
+        v
+Joining Computer
+        |
+        | Connects using RELAY_SERVER_IP:25565
+        v
+Minecraft LAN Game
+```
+
+### Test recordings
+
+#### `hosting.gif`
+
+The hosting computer creates the Minecraft LAN game and uses Exposr to expose local TCP port `25565` through the relay server.
+
+![Minecraft hosting setup](hosting.gif)
+
+#### `joining.gif`
+
+A second computer joins the Minecraft game through the relay server's public IP and port.
+
+![Minecraft joining through relay](joining.gif)
+
+This test checks whether Exposr can carry a real, interactive TCP workload through the relay server. Since the relay is running on a `Standard B1s` VM, the test also helps reveal how the current low-resource server behaves during an active game session.
 
 # Benchmarks
 
